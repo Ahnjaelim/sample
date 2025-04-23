@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DB 모니터링 와이어프레임</title>
+    <style>
+        /* 기본 스타일 - 최소화 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: sans-serif;
+            font-size: 13px;
+        }
+        
+        body {
+            background-color: #fff;
+            color: #333;
+            width: 100%;
+        }
+        
+        .container {
+            width: 100%;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+        
+        /* 헤더 */
+        header {
+            background-color: #eee;
+            padding: 15px 0;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        
+        header h1 {
+            font-size: 16px;
+        }
+        
+        .breadcrumb {
+            display: flex;
+            margin-top: 5px;
+        }
+        
+        .breadcrumb-item:not(:last-child)::after {
+            content: ">";
+            margin: 0 10px;
+            color: #999;
+        }
+        
+        /* 섹션 */
+        .section {
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+            padding: 15px;
+            width: 100%;
+        }
+        
+        .section-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        /* 요약 정보 */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .summary-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        
+        .summary-item-label {
+            color: #666;
+        }
+        
+        /* 쿼리 텍스트 */
+        .query-text {
+            background-color: #eee;
+            padding: 10px;
+            font-family: monospace;
+            white-space: pre;
+            border: 1px solid #ddd;
+            overflow-x: auto;
+            width: 100%;
+        }
+        
+        /* 차트 플레이스홀더 */
+        .chart-placeholder {
+            height: 200px;
+            border: 1px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            font-style: italic;
+            color: #999;
+            width: 100%;
+        }
+        
+        /* 테이블 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        
+        th, td {
+            padding: 6px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        
+        /* 진행 바 */
+        .progress-bar {
+            height: 15px;
+            background-color: #eee;
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+            position: relative;
+        }
+        
+        .progress-value {
+            height: 100%;
+            background-color: #ccc;
+            position: absolute;
+        }
+        
+        /* 계획 시각화 */
+        .plan-box {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        
+        .plan-node {
+            display: inline-block;
+            padding: 5px 10px;
+            border: 1px solid #ddd;
+            margin: 5px;
+            min-width: 120px;
+        }
+        
+        .plan-line {
+            width: 1px;
+            background-color: #ddd;
+            height: 20px;
+            margin: 0 auto;
+        }
+        
+        .plan-children {
+            display: flex;
+            justify-content: center;
+        }
+        
+        /* 목록 */
+        .list {
+            list-style-type: none;
+            margin-bottom: 15px;
+        }
+        
+        .list-item {
+            padding: 5px;
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+        }
+        
+        /* 푸터 */
+        footer {
+            background-color: #eee;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+        }
+        
+        /* 서브 타이틀 */
+        .sub-title {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 헤더 -->
+    <header>
+        <div class="container">
+            <h1>DB 모니터링 시스템</h1>
+            <div class="breadcrumb">
+                <div class="breadcrumb-item">대시보드</div>
+                <div class="breadcrumb-item">쿼리 상세보기</div>
+                <div class="breadcrumb-item">Q123456789</div>
+            </div>
+        </div>
+    </header>
+    
+    <div class="container">
+        <!-- 1. 요약 정보 -->
+        <div class="section">
+            <div class="section-title">1. 상단 (요약 정보)</div>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-item-label">쿼리 ID</div>
+                    <div>Q123456789</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-label">상태</div>
+                    <div>실행 완료</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-label">실행 시간</div>
+                    <div>2025-04-16 14:30:25</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-label">소요 시간</div>
+                    <div>2.5초</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-label">쿼리 유형</div>
+                    <div>SELECT</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-label">총 행 수</div>
+                    <div>1,250</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 2. 쿼리 텍스트 -->
+        <div class="section">
+            <div class="section-title">2. 쿼리 텍스트</div>
+            <div class="query-text">SELECT c.customer_id, c.name, o.order_id, o.total_amount
+FROM customers c
+JOIN orders o ON c.customer_id = o.customer_id
+WHERE c.region = 'Seoul'
+AND o.order_date BETWEEN '2025-01-01' AND '2025-04-01'
+ORDER BY o.total_amount DESC</div>
+        </div>
+        
+        <!-- 3. 성능 분석 -->
+        <div class="section">
+            <div class="section-title">3. 성능 분석</div>
+            
+            <div class="sub-title">리소스 사용량 변화</div>
+            <div class="chart-placeholder">
+                [리소스 사용량 그래프]
+            </div>
+            
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-item-label">CPU 사용량</div>
+                    <div>85%</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-label">메모리 사용량</div>
+                    <div>60%</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-label">디스크 I/O</div>
+                    <div>35%</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 4. 대기 정보 상세 -->
+        <div class="section">
+            <div class="section-title">4. 대기 정보 상세</div>
+            
+            <div class="sub-title">대기 이벤트 목록</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>대기 이벤트</th>
+                        <th>발생 횟수</th>
+                        <th>대기 시간</th>
+                        <th>비율</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>db file sequential read</td>
+                        <td>125</td>
+                        <td>1.2초</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-value" style="width: 48%"></div>
+                            </div>
+                            48%
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>log file sync</td>
+                        <td>45</td>
+                        <td>0.8초</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-value" style="width: 32%"></div>
+                            </div>
+                            32%
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>latch free</td>
+                        <td>30</td>
+                        <td>0.5초</td>
+                        <td>
+                            <div class="progress-bar">
+                                <div class="progress-value" style="width: 20%"></div>
+                            </div>
+                            20%
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="summary-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="summary-item">
+                    <div class="summary-item-label">총 대기 시간</div>
+                    <div>2.5초 (전체 실행 시간의 68%)</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-label">주요 대기 유형</div>
+                    <div>db file sequential read</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 5. 실행 계획 분석 -->
+        <div class="section">
+            <div class="section-title">5. 실행 계획 분석</div>
+            
+            <div class="sub-title">실행 계획</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>연산</th>
+                        <th>오브젝트</th>
+                        <th>비용</th>
+                        <th>행 수</th>
+                        <th>바이트</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td>TABLE ACCESS FULL</td>
+                        <td>CUSTOMERS</td>
+                        <td>230</td>
+                        <td>1,000</td>
+                        <td>78KB</td>
+                    </tr>
+                    <tr>
+                        <td>2</td>
+                        <td>INDEX SCAN</td>
+                        <td>CUSTOMER_IDX</td>
+                        <td>25</td>
+                        <td>250</td>
+                        <td>32KB</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>HASH JOIN</td>
+                        <td>-</td>
+                        <td>120</td>
+                        <td>500</td>
+                        <td>45KB</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="sub-title">각 단계별 예상 비용</div>
+            <div class="summary-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="summary-item">
+                    <div class="summary-item-label">전체 실행 시간</div>
+                    <div>2.5초</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-item-label">예상 처리 행 수</div>
+                    <div>1,250</div>
+                </div>
+            </div>
+            
+            <div class="sub-title">시각적 실행 계획</div>
+            <div class="plan-box">
+                <div class="plan-node">
+                    <div>SELECT</div>
+                    <div>Cost: 375</div>
+                </div>
+                <div class="plan-line"></div>
+                <div class="plan-node">
+                    <div>HASH JOIN</div>
+                    <div>Cost: 120</div>
+                </div>
+                <div class="plan-line"></div>
+                <div class="plan-children">
+                    <div>
+                        <div class="plan-node">
+                            <div>TABLE ACCESS FULL</div>
+                            <div>CUSTOMERS</div>
+                            <div>Cost: 230</div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="plan-node">
+                            <div>INDEX SCAN</div>
+                            <div>CUSTOMER_IDX</div>
+                            <div>Cost: 25</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 6. 쿼리 분석 및 최적화 제안 -->
+        <div class="section">
+            <div class="section-title">6. 쿼리 분석 및 최적화 제안</div>
+            
+            <div class="sub-title">최적화 권장 사항</div>
+            <ul class="list">
+                <li class="list-item">인덱스 추가: account_id 컬럼에 인덱스 생성 권장</li>
+                <li class="list-item">Full Table Scan 대신 Index Scan 사용 고려</li>
+                <li class="list-item">조인 방식 변경: Hash Join 대신 Nested Loop Join 고려</li>
+            </ul>
+            
+            <div class="sub-title">쿼리 진행 상태</div>
+            <div class="summary-item" style="margin-bottom: 15px;">
+                <div>실행 완료</div>
+                <div>쿼리가 성공적으로 완료되었습니다.</div>
+            </div>
+            
+            <div class="sub-title">구체적인 최적화 방안</div>
+            <div class="summary-item" style="margin-bottom: 15px;">
+                <div>인덱스 최적화</div>
+                <p>account_id 컬럼에 인덱스를 추가하여 조회 성능을 향상시킬 수 있습니다.</p>
+                <div class="query-text" style="margin-top: 10px;">CREATE INDEX idx_account_id ON customers(account_id);</div>
+            </div>
+            
+            <div class="summary-item">
+                <div>조인 최적화</div>
+                <p>Hash Join 대신 Nested Loop Join을 사용하여 특정 조건에서 성능을 향상시킬 수 있습니다.</p>
+                <div class="query-text" style="margin-top: 10px;">/* + USE_NL(c o) */ 
+SELECT c.customer_id, c.name, o.order_id, o.total_amount
+FROM customers c
+JOIN orders o ON c.customer_id = o.customer_id
+WHERE c.region = 'Seoul'</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 푸터 -->
+    <footer>
+        <div class="container">
+            DB 모니터링 시스템 v1.0 &copy; 2025
+        </div>
+    </footer>
+</body>
+</html>

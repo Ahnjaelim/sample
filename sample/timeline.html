@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>트랜잭션 실행 시간 분석</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/xrange.js"></script>
+</head>
+<body>
+<div id="container" style="width: 100%; height: 500px;"></div>
+<script>
+const startTime = Date.UTC(2024, 3, 4, 19, 22, 11, 111); // 시작 시간 기준
+Highcharts.chart('container', {
+    chart: {
+        type: 'xrange'
+    },
+    title: {
+        text: '트랜잭션 실행 시간 분석'
+    },
+    subtitle: {
+        text: '시작: 2024-04-04 19:22:11.111, 종료: 2024-04-04 19:22:11.555'
+    },
+    xAxis: {
+        type: 'datetime',
+        title: { text: null },
+        min: startTime,
+        max: Date.UTC(2024, 3, 4, 19, 22, 11, 555),
+        labels: { enabled: false } // X축 범례 제거
+    },
+    yAxis: {
+        categories: [
+            '메인 페이지',
+            '함수 A',
+            '쿼리 A1',
+            '쿼리 A2',
+            '함수 B',
+            '쿼리 B1',
+            '쿼리 B2',
+            '함수 C',
+            '쿼리 C1',
+            '쿼리 C2'
+        ],
+        reversed: true,
+        title: { text: '실행 항목' }
+    },
+    series: [{
+        name: 'Execution Time',
+        borderRadius: 5,
+        pointWidth: 20,
+        data: [
+            { x: startTime, x2: Date.UTC(2024, 3, 4, 19, 22, 11, 555), y: 0, color: '#76B041' },
+            { x: Date.UTC(2024, 3, 4, 19, 22, 11, 150), x2: Date.UTC(2024, 3, 4, 19, 22, 11, 400), y: 1, color: '#D9534F' },
+            { x: Date.UTC(2024, 3, 4, 19, 22, 11, 180), x2: Date.UTC(2024, 3, 4, 19, 22, 11, 250), y: 2, color: '#5BC0DE' },
+            { x: Date.UTC(2024, 3, 4, 19, 22, 11, 220), x2: Date.UTC(2024, 3, 4, 19, 22, 11, 270), y: 3, color: '#5BC0DE' },
+            { x: Date.UTC(2024, 3, 4, 19, 22, 11, 200), x2: Date.UTC(2024, 3, 4, 19, 22, 11, 350), y: 4, color: '#F0AD4E' },
+            { x: Date.UTC(2024, 3, 4, 19, 22, 11, 210), x2: Date.UTC(2024, 3, 4, 19, 22, 11, 290), y: 5, color: '#337AB7' },
+            { x: Date.UTC(2024, 3, 4, 19, 22, 11, 260), x2: Date.UTC(2024, 3, 4, 19, 22, 11, 320), y: 6, color: '#337AB7' },
+            { x: Date.UTC(2024, 3, 4, 19, 22, 11, 300), x2: Date.UTC(2024, 3, 4, 19, 22, 11, 500), y: 7, color: '#C930D6' },
+            { x: Date.UTC(2024, 3, 4, 19, 22, 11, 310), x2: Date.UTC(2024, 3, 4, 19, 22, 11, 380), y: 8, color: '#5CB85C' },
+            { x: Date.UTC(2024, 3, 4, 19, 22, 11, 340), x2: Date.UTC(2024, 3, 4, 19, 22, 11, 420), y: 9, color: '#5CB85C' }
+        ],
+        dataLabels: {
+            enabled: true,
+            formatter: function () {
+                return `${this.point.x - startTime}ms`; // 시작 시간에서 상대적 ms값 표시
+            },
+            style: { fontSize: '10px' }
+        }
+    }],
+    tooltip: {
+        formatter: function () {
+            return `<b>${this.point.category}</b>: ${this.point.x - startTime}ms`;
+        }
+    }
+});
+</script>
+</body>
+</html>

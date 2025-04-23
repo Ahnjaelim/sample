@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DB 쿼리 실행 계획 시각화</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-top: 0;
+            font-size: 1.5rem;
+        }
+        .query-info {
+            background-color: #f0f5ff;
+            border-left: 4px solid #1a73e8;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .execution-plan {
+            display: flex;
+            flex-direction: column;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+        .plan-node {
+            display: flex;
+            margin-bottom: 15px;
+            position: relative;
+        }
+        .node-content {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            min-width: 250px;
+            position: relative;
+        }
+        .node-connector {
+            position: absolute;
+            top: 50%;
+            left: -20px;
+            width: 20px;
+            height: 2px;
+            background-color: #aaa;
+        }
+        .node-connector::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: -4px;
+            border-style: solid;
+            border-width: 5px 0 5px 8px;
+            border-color: transparent transparent transparent #aaa;
+        }
+        .node-level-1 { margin-left: 50px; }
+        .node-level-2 { margin-left: 100px; }
+        .node-level-3 { margin-left: 150px; }
+        .node-level-4 { margin-left: 200px; }
+        
+        .node-type {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .node-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+        .node-cost, .node-rows, .node-time {
+            display: flex;
+            align-items: center;
+        }
+        .stat-label {
+            color: #666;
+            margin-right: 5px;
+        }
+        .stat-value {
+            font-weight: 500;
+        }
+        .time-critical {
+            background-color: #ffebee;
+            border-color: #f44336;
+        }
+        .time-warning {
+            background-color: #fff8e1;
+            border-color: #ffc107;
+        }
+        .time-good {
+            background-color: #e8f5e9;
+            border-color: #4caf50;
+        }
+        .metrics-section {
+            margin-top: 30px;
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .metric-card {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+        }
+        .metric-title {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .execution-summary {
+            background-color: #f5f5f5;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .summary-label {
+            font-weight: 500;
+        }
+        .bottleneck-alert {
+            background-color: #fdeded;
+            border-left: 4px solid #d32f2f;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .bottleneck-title {
+            color: #d32f2f;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .recommendations {
+            background-color: #e6f7ff;
+            border-left: 4px solid #1890ff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .recommendations-title {
+            color: #1890ff;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .recommendations ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .recommendations li {
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>쿼리 실행 계획 분석</h1>
+        
+        <div class="query-info">
+SELECT o.order_id, o.order_date, c.customer_name, p.product_name, oi.quantity
+FROM orders o
+JOIN order_items oi ON o.order_id = oi.order_id
+JOIN customers c ON o.customer_id = c.customer_id
+JOIN products p ON oi.product_id = p.product_id
+WHERE o.order_date BETWEEN '2023-01-01' AND '2023-03-31'
+AND p.category_id = 5
+ORDER BY o.order_date DESC;
+        </div>
+        
+        <div class="execution-summary">
+            <div class="summary-row">
+                <span class="summary-label">총 실행 시간:</span>
+                <span>3,245 ms</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">반환된 행 수:</span>
+                <span>2,467 rows</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">스캔된 행 수:</span>
+                <span>1,245,678 rows</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-label">총 비용:</span>
+                <span>892.34</span>
+            </div>
+        </div>
+        
+        <div class="bottleneck-alert">
+            <div class="bottleneck-title">병목 지점 감지됨</div>
+            <p>products 테이블에서 Full Table Scan이 발생했습니다. 이 작업은 전체 쿼리 시간의 72%를 차지합니다.</p>
+        </div>
+
+        <div class="execution-plan">
+            <div class="plan-node">
+                <div class="node-content">
+                    <div class="node-type">Sort</div>
+                    <div>ORDER BY o.order_date DESC</div>
+                    <div class="node-stats">
+                        <div class="node-cost">
+                            <span class="stat-label">비용:</span>
+                            <span class="stat-value">89.45</span>
+                        </div>
+                        <div class="node-rows">
+                            <span class="stat-label">행:</span>
+                            <span class="stat-value">2,467</span>
+                        </div>
+                        <div class="node-time">
+                            <span class="stat-label">시간:</span>
+                            <span class="stat-value">245 ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plan-node node-level-1">
+                <div class="node-connector"></div>
+                <div class="node-content">
+                    <div class="node-type">Hash Join</div>
+                    <div>o.customer_id = c.customer_id</div>
+                    <div class="node-stats">
+                        <div class="node-cost">
+                            <span class="stat-label">비용:</span>
+                            <span class="stat-value">125.78</span>
+                        </div>
+                        <div class="node-rows">
+                            <span class="stat-label">행:</span>
+                            <span class="stat-value">2,467</span>
+                        </div>
+                        <div class="node-time">
+                            <span class="stat-label">시간:</span>
+                            <span class="stat-value">189 ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plan-node node-level-2">
+                <div class="node-connector"></div>
+                <div class="node-content">
+                    <div class="node-type">Hash Join</div>
+                    <div>o.order_id = oi.order_id</div>
+                    <div class="node-stats">
+                        <div class="node-cost">
+                            <span class="stat-label">비용:</span>
+                            <span class="stat-value">156.23</span>
+                        </div>
+                        <div class="node-rows">
+                            <span class="stat-label">행:</span>
+                            <span class="stat-value">3,542</span>
+                        </div>
+                        <div class="node-time">
+                            <span class="stat-label">시간:</span>
+                            <span class="stat-value">378 ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plan-node node-level-3">
+                <div class="node-connector"></div>
+                <div class="node-content">
+                    <div class="node-type">Index Scan</div>
+                    <div>orders (order_date_idx)</div>
+                    <div class="node-stats">
+                        <div class="node-cost">
+                            <span class="stat-label">비용:</span>
+                            <span class="stat-value">45.67</span>
+                        </div>
+                        <div class="node-rows">
+                            <span class="stat-label">행:</span>
+                            <span class="stat-value">12,543</span>
+                        </div>
+                        <div class="node-time">
+                            <span class="stat-label">시간:</span>
+                            <span class="stat-value">98 ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plan-node node-level-3">
+                <div class="node-connector"></div>
+                <div class="node-content">
+                    <div class="node-type">Hash Join</div>
+                    <div>oi.product_id = p.product_id</div>
+                    <div class="node-stats">
+                        <div class="node-cost">
+                            <span class="stat-label">비용:</span>
+                            <span class="stat-value">345.21</span>
+                        </div>
+                        <div class="node-rows">
+                            <span class="stat-label">행:</span>
+                            <span class="stat-value">3,542</span>
+                        </div>
+                        <div class="node-time">
+                            <span class="stat-label">시간:</span>
+                            <span class="stat-value">456 ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plan-node node-level-4">
+                <div class="node-connector"></div>
+                <div class="node-content time-critical">
+                    <div class="node-type">Full Table Scan</div>
+                    <div>products (p.category_id = 5)</div>
+                    <div class="node-stats">
+                        <div class="node-cost">
+                            <span class="stat-label">비용:</span>
+                            <span class="stat-value">567.89</span>
+                        </div>
+                        <div class="node-rows">
+                            <span class="stat-label">행:</span>
+                            <span class="stat-value">1,230,000</span>
+                        </div>
+                        <div class="node-time">
+                            <span class="stat-label">시간:</span>
+                            <span class="stat-value">2,345 ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plan-node node-level-4">
+                <div class="node-connector"></div>
+                <div class="node-content time-good">
+                    <div class="node-type">Index Scan</div>
+                    <div>order_items (order_id_idx)</div>
+                    <div class="node-stats">
+                        <div class="node-cost">
+                            <span class="stat-label">비용:</span>
+                            <span class="stat-value">23.45</span>
+                        </div>
+                        <div class="node-rows">
+                            <span class="stat-label">행:</span>
+                            <span class="stat-value">15,678</span>
+                        </div>
+                        <div class="node-time">
+                            <span class="stat-label">시간:</span>
+                            <span class="stat-value">87 ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="plan-node node-level-2">
+                <div class="node-connector"></div>
+                <div class="node-content time-good">
+                    <div class="node-type">Index Scan</div>
+                    <div>customers (PRIMARY)</div>
+                    <div class="node-stats">
+                        <div class="node-cost">
+                            <span class="stat-label">비용:</span>
+                            <span class="stat-value">12.34</span>
+                        </div>
+                        <div class="node-rows">
+                            <span class="stat-label">행:</span>
+                            <span class="stat-value">2,467</span>
+                        </div>
+                        <div class="node-time">
+                            <span class="stat-label">시간:</span>
+                            <span class="stat-value">34 ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="metrics-section">
+            <h2>성능 지표</h2>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">CPU 사용량</div>
+                    <div class="metric-value">78%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">메모리 사용량</div>
+                    <div class="metric-value">256 MB</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">디스크 읽기</div>
+                    <div class="metric-value">187 MB</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">디스크 쓰기</div>
+                    <div class="metric-value">2.3 MB</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="recommendations">
+            <div class="recommendations-title">성능 개선 추천</div>
+            <p>다음 최적화를 통해 쿼리 성능을 개선할 수 있습니다:</p>
+            <ul>
+                <li><strong>인덱스 추가</strong>: products 테이블의 category_id 열에 인덱스를 추가하세요. 이를 통해 Full Table Scan을 방지하고 성능을 크게 향상시킬 수 있습니다.</li>
+                <li><strong>쿼리 재작성</strong>: 조인 순서를 변경하여 더 작은 결과 집합부터 처리하도록 쿼리를 재작성하세요.</li>
+                <li><strong>통계 업데이트</strong>: products 테이블의 통계가 오래되었습니다. 통계를 업데이트하여 옵티마이저가 더 나은 실행 계획을 선택할 수 있게 하세요.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

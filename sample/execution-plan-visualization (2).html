@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>쿼리 실행 계획 시각화</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8f8f8;
+      padding: 20px;
+    }
+    h2 {
+      color: #333;
+    }
+    .plan-container {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .plan-box {
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 8px;
+      width: 48%;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    .step {
+      margin-left: 20px;
+      margin-top: 5px;
+      border-left: 2px solid #aaa;
+      padding-left: 10px;
+    }
+    .operator {
+      font-weight: bold;
+      color: #007acc;
+    }
+    .cost {
+      font-size: 0.9em;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>쿼리 실행 계획 시각화 (PostgreSQL 스타일)</h2>
+  <div class="plan-container">
+    <div class="plan-box">
+      <div class="operator">HashAggregate</div>
+      <div class="cost">cost=272.39..272.54 rows=10 width=68</div>
+      <div class="step">
+        <div class="operator">Hash Join</div>
+        <div class="cost">cost=167.22..267.77 rows=264 width=20</div>
+        <div class="step">
+          <div class="operator">Seq Scan on om_cloud_optimizer_tbl ocot</div>
+          <div class="cost">cost=0.00..99.79 rows=287</div>
+          <div class="cost">Filter: (resource_new_size_type1 > 0)</div>
+        </div>
+        <div class="step">
+          <div class="operator">Hash</div>
+          <div class="step">
+            <div class="operator">Subquery Scan on cc</div>
+            <div class="step">
+              <div class="operator">HashAggregate</div>
+              <div class="cost">cost=158.15..160.94 rows=279</div>
+              <div class="step">
+                <div class="operator">Seq Scan on om_resource_call_cnt_month ocrlt</div>
+                <div class="cost">cost=0.00..146.10 rows=2410</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="plan-box">
+      <h3>쿼리 실행 계획 (MySQL 스타일)</h3>
+      <div class="operator">Sort (key: ocot.resource_type)</div>
+      <div class="cost">[using temporary table, filesort]</div>
+      <div class="step">
+        <div class="operator">Nested Loop</div>
+        <div class="step">
+          <div class="operator">Table scan on om_cloud_optimizer_tbl ocot</div>
+          <div class="cost">access type: ALL, rows: 183, filtered: 100%</div>
+          <div class="cost">attached_condition: resource_new_size_type1 > 0</div>
+        </div>
+        <div class="step">
+          <div class="operator">Derived Table &lt;derived2&gt; (materialized)</div>
+          <div class="step">
+            <div class="operator">Sort (key: ocrlt.resource_no)</div>
+            <div class="cost">[using temporary table, filesort]</div>
+            <div class="step">
+              <div class="operator">Table scan on om_resource_call_cnt_month ocrlt</div>
+              <div class="cost">access type: ALL, rows: 1563</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="operator">Index Lookup on &lt;derived2&gt;</div>
+            <div class="cost">key_length: 5, rows: 10</div>
+            <div class="cost">ref: tracer.ocot.resource_no</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

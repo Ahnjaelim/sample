@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Highcharts 시간 기준 스캐터 차트 스트리밍 데모</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts.js"></script>
+</head>
+<body>
+    <div id="container" style="width: 100%; height: 500px; margin: 0 auto"></div>
+
+    <script>
+        // 현재 시간을 기준으로 차트 제목에 표시할 시간 문자열 생성
+        function getTimeString() {
+            const now = new Date();
+            return now.getHours() + ':' + 
+                   now.getMinutes().toString().padStart(2, '0') + ':' + 
+                   now.getSeconds().toString().padStart(2, '0');
+        }
+
+        // 초기 데이터 생성 (현재 시간부터 -90초까지의 데이터)
+        function generateInitialData() {
+            const data1 = [];
+            const data2 = [];
+            const data3 = [];
+            const now = Date.now();
+            
+            // 10개의 시간 포인트 생성 (-90초부터 현재까지, 10초 간격)
+            for (let i = 0; i < 10; i++) {
+                const timePoint = now - (90 - i * 10) * 1000; // 밀리초 단위로 변환
+                
+                // 시리즈 1 (노란색 원) - 각 시간에 1~3개의 포인트
+                const pointCount1 = Math.floor(Math.random() * 3) + 1;
+                for (let j = 0; j < pointCount1; j++) {
+                    data1.push({
+                        x: timePoint,
+                        y: Math.random() * 100,
+                        name: new Date(timePoint).toISOString().substr(11, 8)
+                    });
+                }
+                
+                // 시리즈 2 (빨간색 원) - 각 시간에 1~3개의 포인트
+                const pointCount2 = Math.floor(Math.random() * 3) + 1;
+                for (let j = 0; j < pointCount2; j++) {
+                    data2.push({
+                        x: timePoint,
+                        y: Math.random() * 100,
+                        name: new Date(timePoint).toISOString().substr(11, 8)
+                    });
+                }
+                
+                // 시리즈 3 (X자 표시) - 각 시간에 1~3개의 포인트
+                const pointCount3 = Math.floor(Math.random() * 3) + 1;
+                for (let j = 0; j < pointCount3; j++) {
+                    data3.push({
+                        x: timePoint,
+                        y: Math.random() * 100,
+                        name: new Date(timePoint).toISOString().substr(11, 8)
+                    });
+                }
+            }
+            return [data1, data2, data3];
+        }
+
+        // 새로운 데이터 포인트 생성 (현재 시간 기준)
+        function generateNewDataPoints() {
+            const now = Date.now();
+            
+            // 시리즈 1 (노란색 원)
+            const pointCount1 = Math.floor(Math.random() * 3) + 1;
+            const newPoints1 = [];
+            for (let i = 0; i < pointCount1; i++) {
+                newPoints1.push({
+                    x: now,
+                    y: Math.random() * 100,
+                    name: new Date(now).toISOString().substr(11, 8)
+                });
+            }
+            
+            // 시리즈 2 (빨간색 원)
+            const pointCount2 = Math.floor(Math.random() * 3) + 1;
+            const newPoints2 = [];
+            for (let i = 0; i < pointCount2; i++) {
+                newPoints2.push({
+                    x: now,
+                    y: Math.random() * 100,
+                    name: new Date(now).toISOString().substr(11, 8)
+                });
+            }
+            
+            // 시리즈 3 (X자 표시)
+            const pointCount3 = Math.floor(Math.random() * 3) + 1;
+            const newPoints3 = [];
+            for (let i = 0; i < pointCount3; i++) {
+                newPoints3.push({
+                    x: now,
+                    y: Math.random() * 100,
+                    name: new Date(now).toISOString().substr(11, 8)
+                });
+            }
+            
+            return [newPoints1, newPoints2, newPoints3];
+        }
+
+        // 초기 데이터
+        let allDataSeries = generateInitialData();
+
+        // 차트 초기화
+        const chart = Highcharts.chart('container', {
+            chart: {
+                type: 'scatter',
+                animation: Highcharts.svg, // SVG에서 애니메이션 활성화
+                events: {
+                    load: function () {
+                        // 차트 로드 후 10초마다 데이터 업데이트
+                        setInterval(() => {
+                            const now = Date.now();
+                            
+                            // 현재 시간에 새 데이터 추가
+                            const newPointsSeries = generateNewDataPoints();
+                            
+                            // 각 시리즈 업데이트
+                            for (let i = 0; i < 3; i++) {
+                                allDataSeries[i] = allDataSeries[i].concat(newPointsSeries[i]);
+                                
+                                // 90초보다 오래된 데이터 제거 (x축 시간 기준)
+                                const cutoffTime = now - 90 * 1000;
+                                allDataSeries[i] = allDataSeries[i].filter(point => point.x >= cutoffTime);
+                                
+                                // 시리즈 데이터 업데이트
+                                this.series[i].setData(allDataSeries[i]);
+                            }
+                            
+                            // x축 범위 업데이트 (현재부터 -90초까지)
+                            this.xAxis[0].setExtremes(now - 90 * 1000, now);
+                            
+                            // 타이틀 업데이트
+                            this.setTitle({ text: '시간 기준 스캐터 차트 - 마지막 업데이트: ' + getTimeString() });
+                        }, 10000); // 10초마다 실행
+                    }
+                }
+            },
+            time: {
+                useUTC: false // 로컬 시간 사용
+            },
+            title: {
+                text: '시간 기준 스캐터 차트 - 마지막 업데이트: ' + getTimeString()
+            },
+            subtitle: {
+                text: '10초마다 새로운 데이터가 추가되고 90초 이전 데이터는 삭제됩니다'
+            },
+            xAxis: {
+                type: 'datetime',
+                title: {
+                    text: '시간 (현재부터 -90초)'
+                },
+                labels: {
+                    format: '{value:%H:%M:%S}'
+                },
+                tickInterval: 10 * 1000, // 10초 간격으로 틱 표시
+                min: Date.now() - 90 * 1000,
+                max: Date.now()
+            },
+            yAxis: {
+                title: {
+                    text: 'Y 값'
+                },
+                min: 0,
+                max: 100
+            },
+            plotOptions: {
+                scatter: {
+                    states: {
+                        hover: {
+                            marker: {
+                                enabled: false
+                            }
+                        }
+                    },
+                    tooltip: {
+                        headerFormat: '<b>{series.name}</b><br>',
+                        pointFormat: '시간: {point.name}<br>값: {point.y}'
+                    }
+                }
+            },
+            series: [
+                {
+                    name: '시리즈 1',
+                    color: 'rgba(255, 255, 0, 0.7)', // 노란색
+                    marker: {
+                        symbol: 'circle',
+                        radius: 5,
+                        lineWidth: 1
+                    },
+                    data: allDataSeries[0]
+                },
+                {
+                    name: '시리즈 2',
+                    color: 'rgba(255, 0, 0, 0.7)', // 빨간색
+                    marker: {
+                        symbol: 'circle',
+                        radius: 5,
+                        lineWidth: 1
+                    },
+                    data: allDataSeries[1]
+                },
+                {
+                    name: '시리즈 3',
+                    color: 'rgba(255, 0, 0, 0.7)', // 파란색
+                    marker: {
+                        symbol: 'triangle',
+                        radius: 5,
+                        lineWidth: 1
+                    },
+                    data: allDataSeries[2]
+                }
+            ]
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>년/월/주차 선택기</title>
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    
+    <!-- SumoSelect CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery.sumoselect/3.4.8/sumoselect.min.css">
+    
+    <!-- SumoSelect JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.sumoselect/3.4.8/jquery.sumoselect.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .select-container {
+            margin-bottom: 20px;
+        }
+        select {
+            padding: 8px;
+            margin-right: 10px;
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            width: 200px;
+        }
+        label {
+            display: inline-block;
+            width: 50px;
+            font-weight: bold;
+        }
+        /* SumoSelect 커스텀 스타일 */
+        .SumoSelect {
+            width: 250px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>년/월/주차 선택</h2>
+        
+        <div class="select-container">
+            <label for="yearSelect">년:</label>
+            <select id="yearSelect"></select>
+        </div>
+        
+        <div class="select-container">
+            <label for="monthSelect">월:</label>
+            <select id="monthSelect"></select>
+        </div>
+        
+        <div class="select-container">
+            <label for="weekSelect">주차:</label>
+            <select id="weekSelect" multiple="multiple"></select>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // 년도 옵션 생성 (현재 년도 기준으로 5년 전부터 5년 후까지)
+            function generateYearOptions() {
+                const currentYear = new Date().getFullYear();
+                const startYear = currentYear - 5;
+                const endYear = currentYear + 5;
+                
+                for (let year = startYear; year <= endYear; year++) {
+                    $('#yearSelect').append($('<option>', {
+                        value: year,
+                        text: year + '년',
+                        selected: year === currentYear
+                    }));
+                }
+            }
+            
+            // 월 옵션 생성 (1월부터 12월까지)
+            function generateMonthOptions() {
+                const currentMonth = new Date().getMonth() + 1; // 0-based index
+                
+                for (let month = 1; month <= 12; month++) {
+                    $('#monthSelect').append($('<option>', {
+                        value: month,
+                        text: month + '월',
+                        selected: month === currentMonth
+                    }));
+                }
+            }
+            
+            // 해당 년도와 월의 주차 옵션 생성
+            function generateWeekOptions() {
+                const year = parseInt($('#yearSelect').val());
+                const month = parseInt($('#monthSelect').val());
+                
+                // 주차 옵션 초기화
+                $('#weekSelect').empty();
+                
+                // 해당 월의 첫날과 마지막 날
+                const firstDay = new Date(year, month - 1, 1);
+                const lastDay = new Date(year, month, 0);
+                
+                // 해당 월의 주차 수 계산
+                const totalDays = lastDay.getDate();
+                const totalWeeks = Math.ceil((totalDays + firstDay.getDay()) / 7);
+                
+                for (let week = 1; week <= totalWeeks; week++) {
+                    $('#weekSelect').append($('<option>', {
+                        value: week,
+                        text: week + '주차'
+                    }));
+                }
+                
+                // SumoSelect 업데이트
+                $('#weekSelect')[0].sumo.reload();
+            }
+            
+            // 초기 옵션 생성
+            generateYearOptions();
+            generateMonthOptions();
+            
+            // SumoSelect 초기화
+            $('#weekSelect').SumoSelect({
+                placeholder: '주차 선택',
+                captionFormat: '{0} 주차 선택됨',
+                captionFormatAllSelected: '모든 주차 선택됨',
+                locale: ['확인', '취소', '모두 선택'],
+                selectAll: true,
+                csvDispCount: 3
+            });
+            
+            // 주차 옵션 생성
+            generateWeekOptions();
+            
+            // 년도나 월이 변경되면 주차 옵션 다시 생성
+            $('#yearSelect, #monthSelect').change(function() {
+                generateWeekOptions();
+            });
+        });
+    </script>
+</body>
+</html>

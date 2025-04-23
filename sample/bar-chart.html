@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>바 차트</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    canvas {
+      max-width: 600px;
+      margin: 20px auto;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="cpuUsageChart"></canvas>
+  <canvas id="memoryUsageChart"></canvas>
+  <canvas id="tpsChart"></canvas>
+  <canvas id="avgResponseTimeChart"></canvas>
+
+  <script>
+    // CPU 사용량 차트 데이터
+    var cpuUsageData = {
+      labels: ['11:00', '11:15', '11:30', '11:45'],
+      datasets: [
+        { label: 'WAS-01', data: [17.52, 15.33, 25.55, 22.33] }, 
+        { label: 'WAS-02', data: [18.22, 24.33, 21.77, 24.21] },
+        { label: 'WAS-03', data: [21.22, 21.35, 23.64, 40.23] },
+        { label: 'WAS-04', data: [22.12, 27.88, 21.45, 35.66] },
+        { label: '임계치', data: [80, 80, 80, 80] }
+      ]
+    };
+
+    // Memory 사용량 차트 데이터 
+    var memoryUsageData = {
+      labels: ['11:00', '11:15', '11:30', '11:45'],
+      datasets: [
+        { label: 'WAS-01', data: [56, 56, 58, 60] },
+        { label: 'WAS-02', data: [52, 52, 52, 52] }, 
+        { label: 'WAS-03', data: [53, 56, 55, 57] },
+        { label: 'WAS-04', data: [62, 62, 61, 62] },
+        { label: '임계치', data: [80, 80, 80, 80] }
+      ]
+    };
+
+    // 응답 처리 수 차트 데이터
+    var tpsData = {
+      labels: ['11:00', '11:15', '11:30', '11:45'],  
+      datasets: [
+        { label: 'WAS-01', data: [832, 756, 554, 554] },
+        { label: 'WAS-02', data: [821, 719, 921, 824] },
+        { label: 'WAS-03', data: [724, 629, 589, 936] },
+        { label: 'WAS-04', data: [923, 645, 425, 811] }
+      ]
+    };
+
+    // 평균 응답 시간 차트 데이터
+    var avgResponseTimeData = {
+      labels: ['11:00', '11:15', '11:30', '11:45'],
+      datasets: [
+        { label: 'WAS-01', data: [4, 5, 7, 6] }, 
+        { label: 'WAS-02', data: [6, 5, 5, 7] },
+        { label: 'WAS-03', data: [7, 8, 8, 6] },
+        { label: 'WAS-04', data: [4, 6, 9, 6] }        
+      ]
+    };
+
+    // 차트 옵션
+    var options = {
+      scales: {
+        y: { beginAtZero: true }
+      }
+    };
+
+    // 차트 그리기
+    new Chart('cpuUsageChart', {type: 'bar', data: cpuUsageData, options: options});
+    new Chart('memoryUsageChart', {type: 'bar', data: memoryUsageData, options: options});  
+    new Chart('tpsChart', {type: 'bar', data: tpsData, options: options});
+    new Chart('avgResponseTimeChart', {type: 'bar', data: avgResponseTimeData, options: options});
+  </script>
+</body>
+</html>

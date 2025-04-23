@@ -1,0 +1,115 @@
+<div class="query-details-container">
+    <h3>트랜잭션 상세 정보: 쿼리 목록</h3>
+    
+    <table class="query-table">
+      <thead>
+        <tr>
+          <th>쿼리 ID</th>
+          <th>쿼리 내용</th>
+          <th>시작 시간</th>
+          <th>종료 시간</th>
+          <th>처리 시간</th>
+          <th>상태</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Q-20250402-001</td>
+          <td>SELECT * FROM user_accounts WHERE user_id = '12345' AND status = 'ACTIVE'</td>
+          <td>2025-04-02 09:30:15.243</td>
+          <td>2025-04-02 09:30:15.352</td>
+          <td>109ms</td>
+          <td><span class="status-success">성공</span></td>
+        </tr>
+        <tr>
+          <td>Q-20250402-002</td>
+          <td>INSERT INTO user_logs (user_id, action_type, timestamp) VALUES ('12345', 'LOGIN', CURRENT_TIMESTAMP)</td>
+          <td>2025-04-02 09:30:15.355</td>
+          <td>2025-04-02 09:30:15.425</td>
+          <td>70ms</td>
+          <td><span class="status-success">성공</span></td>
+        </tr>
+        <tr>
+          <td>Q-20250402-003</td>
+          <td>SELECT p.* FROM products p JOIN product_categories pc ON p.category_id = pc.id WHERE pc.name = '전자기기' ORDER BY p.price DESC LIMIT 10</td>
+          <td>2025-04-02 09:30:15.428</td>
+          <td>2025-04-02 09:30:15.698</td>
+          <td>270ms</td>
+          <td><span class="status-success">성공</span></td>
+        </tr>
+        <tr>
+          <td>Q-20250402-004</td>
+          <td>UPDATE user_preferences SET theme = 'dark', notifications = 'enabled' WHERE user_id = '12345'</td>
+          <td>2025-04-02 09:30:15.701</td>
+          <td>2025-04-02 09:30:15.778</td>
+          <td>77ms</td>
+          <td><span class="status-success">성공</span></td>
+        </tr>
+        <tr>
+          <td>Q-20250402-005</td>
+          <td>SELECT COUNT(*) as cart_count FROM shopping_cart WHERE user_id = '12345' AND expire_date > CURRENT_TIMESTAMP</td>
+          <td>2025-04-02 09:30:15.780</td>
+          <td>2025-04-02 09:30:15.870</td>
+          <td>90ms</td>
+          <td><span class="status-success">성공</span></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="summary-info">
+      <p>총 쿼리 수: 5</p>
+      <p>총 처리 시간: 616ms</p>
+      <p>평균 처리 시간: 123.2ms</p>
+    </div>
+  </div>
+  
+  <style>
+  .query-details-container {
+    font-family: 'Noto Sans KR', sans-serif;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+  }
+  
+  .query-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 14px;
+  }
+  
+  .query-table th, .query-table td {
+    padding: 10px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+  }
+  
+  .query-table th {
+    background-color: #e9ecef;
+    font-weight: 600;
+  }
+  
+  .query-table tr:hover {
+    background-color: #f1f3f5;
+  }
+  
+  .status-success {
+    color: #2f9e44;
+    font-weight: 600;
+    padding: 2px 8px;
+    background-color: #d3f9d8;
+    border-radius: 4px;
+  }
+  
+  .summary-info {
+    background-color: #e7f5ff;
+    padding: 15px;
+    border-radius: 6px;
+    margin-top: 20px;
+  }
+  
+  .summary-info p {
+    margin: 5px 0;
+    font-weight: 500;
+  }
+  </style>

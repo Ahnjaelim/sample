@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Highcharts 어노테이션 예제</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/highcharts.js"></script>
+    <!-- 어노테이션 모듈 추가 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/10.3.3/modules/annotations.js"></script>
+    <style>
+        #container {
+            width: 800px;
+            height: 400px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Highcharts.chart('container', {
+                chart: {
+                    type: 'spline'
+                },
+                title: {
+                    text: '월별 평균 온도'
+                },
+                subtitle: {
+                    text: '어노테이션 예제'
+                },
+                xAxis: {
+                    categories: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월']
+                },
+                yAxis: {
+                    title: {
+                        text: '온도 (°C)'
+                    }
+                },
+                tooltip: {
+                    valueSuffix: '°C'
+                },
+                series: [{
+                    name: '서울',
+                    data: [-2.9, -0.9, 5.0, 12.2, 17.3, 21.5, 25.2, 26.1, 21.2, 14.1, 6.6, -0.6]
+                }, {
+                    name: '부산',
+                    data: [3.8, 5.7, 9.8, 14.8, 18.5, 21.5, 25.2, 26.5, 23.3, 18.9, 13.4, 7.1]
+                }],
+                
+                // 어노테이션 추가
+                annotations: [{
+                    // 기본 라벨 어노테이션
+                    labels: [{
+                        point: { x: 6, y: 25.2, xAxis: 0, yAxis: 0 },
+                        text: '가장 더운 달',
+                        backgroundColor: 'rgba(255, 255, 255, 0.7)',
+                        borderColor: 'rgb(100, 100, 100)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                        padding: 5,
+                        shadow: true
+                    }],
+                    // 화살표 어노테이션
+                    shapes: [{
+                        type: 'path',
+                        points: [{
+                            x: 9,
+                            y: 21.2,
+                            xAxis: 0,
+                            yAxis: 0
+                        }, {
+                            x: 11,
+                            y: 6.6,
+                            xAxis: 0,
+                            yAxis: 0
+                        }],
+                        markerEnd: 'arrow',
+                        stroke: 'red',
+                        strokeWidth: 2
+                    }, {
+                        // 사각형 영역 표시
+                        type: 'rect',
+                        point: { x: 0, y: -5, xAxis: 0, yAxis: 0 },
+                        width: 3,
+                        height: 10,
+                        fill: 'rgba(0, 120, 200, 0.2)',
+                        stroke: 'rgba(0, 120, 200, 0.5)',
+                        strokeWidth: 1
+                    }]
+                }, {
+                    // 두번째 어노테이션 그룹
+                    labels: [{
+                        point: { x: 3, y: 14.8, xAxis: 0, yAxis: 0 },
+                        text: '봄철 온도',
+                        backgroundColor: 'rgba(255, 240, 180, 0.7)',
+                        borderColor: 'rgb(200, 150, 0)',
+                        borderWidth: 1,
+                        shape: 'callout',
+                        align: 'right',
+                        y: -40,
+                        x: 0
+                    }]
+                }]
+            });
+        });
+    </script>
+</body>
+</html>

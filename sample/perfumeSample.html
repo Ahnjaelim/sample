@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D3 워터폴 차트</title>
+  
+  <!-- D3.js 라이브러리 로드 -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  
+  <style>
+    body {
+      font-family: 'Malgun Gothic', -apple-system, sans-serif;
+      padding: 20px;
+      margin: 0;
+    }
+    
+    h1 {
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .chart-container {
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+      margin-top: 20px;
+      overflow: auto;
+      padding: 10px;
+    }
+    
+    .chart-header {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+      font-weight: bold;
+      padding: 5px 0;
+    }
+    
+    .resource-name-header {
+      width: 220px;
+      padding-left: 10px;
+    }
+    
+    .timeline-header {
+      flex-grow: 1;
+    }
+    
+    .stats-header {
+      width: 80px;
+      text-align: right;
+      padding-right: 10px;
+    }
+    
+    .resource-row {
+      display: flex;
+      padding: 5px 0;
+      border-bottom: 1px solid #f1f1f1;
+      font-size: 12px;
+    }
+    
+    .resource-row:hover {
+      background-color: #f9f9f9;
+    }
+    
+    .resource-name {
+      width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding-left: 10px;
+    }
+    
+    .resource-timeline {
+      flex-grow: 1;
+      position: relative;
+      height: 20px;
+    }
+    
+    .timeline-scale {
+      height: 20px;
+      position: relative;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .scale-marker {
+      position: absolute;
+      height: 5px;
+      border-left: 1px solid #ccc;
+      font-size: 10px;
+      color: #777;
+      padding-top: 5px;
+    }
+    
+    .resource-bar {
+      position: absolute;
+      height: 14px;
+      top: 3px;
+      border-radius: 2px;
+    }
+    
+    .bar-waiting {
+      opacity: 0.4;
+    }
+    
+    .bar-download {
+      opacity: 0.8;
+    }
+    
+    .resource-stats {
+      width: 80px;
+      text-align: right;
+      padding-right: 10px;
+    }
+    
+    .tooltip {
+      position: absolute;
+      background-color: rgba(0,0,0,0.8);
+      color: white;
+      padding: 8px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    
+    .legend {
+      display: flex;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin-right: 20px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      margin-right: 5px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>리소스 로딩 워터폴 차트</h1>
+    
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #2196F3;"></div>
+        <span>스크립트</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #4CAF50;"></div>
+        <span>스타일시트</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #FF9800;"></div>
+        <span>이미지</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #9C27B0;"></div>
+        <span>폰트</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #F44336;"></div>
+        <span>XHR/Fetch</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background-color: #607D8B;"></div>
+        <span>기타</span>
+      </div>
+    </div>
+    
+    <div class="chart-container">
+      <div class="chart-header">
+        <div class="resource-name-header">파일명</div>
+        <div class="timeline-header">타임라인</div>
+        <div class="stats-header">크기</div>
+        <div class="stats-header">시간</div>
+      </div>
+      
+      <div class="timeline-scale" id="timeline-scale">
+        <!-- 스케일은 자바스크립트로 그려집니다 -->
+      </div>
+      
+      <div id="chart-content">
+        <!-- 차트 내용은 자바스크립트로 그려집니다 -->
+      </div>
+    </div>
+    
+    <div id="tooltip" class="tooltip"></div>
+  </div>
+  
+  <script>
+    // 예제 데이터
+    const resourceData = [
+      { name: 'cmis.jpg', type: 'image', status: 200, startTime: 0, duration: 70, ttfb: 20, size: 5.5 * 1024 },
+      { name: 'irene.jpg', type: 'image', status: 200, startTime: 15, duration: 134, ttfb: 35, size: 14.3 * 1024 },
+      { name: 'ic-expand-more.png', type: 'image', status: 200, startTime: 30, duration: 252, ttfb: 60, size: 423 },
+      { name: 'ic-r-lose-24-pr-dark.svg', type: 'image', status: 200, startTime: 40, duration: 134, ttfb: 45, size: 471 },
+      { name: 'link_facebook.png', type: 'image', status: 200, startTime: 55, duration: 252, ttfb: 70, size: 2.1 * 1024 },
+      { name: 'link_twitter.png', type: 'image', status: 200, startTime: 60, duration: 252, ttfb: 65, size: 2.2 * 1024 },
+      { name: 'link_youtube.png', type: 'image', status: 200, startTime: 70, duration: 191, ttfb: 50, size: 3.0 * 1024 },
+      { name: 'link_blog.png', type: 'image', status: 200, startTime: 75, duration: 252, ttfb: 75, size: 3.3 * 1024 },
+      { name: 'link_vimeo.png', type: 'image', status: 200, startTime: 80, duration: 260, ttfb: 90, size: 656 },
+      { name: 'Pretendard-Bold.woff2', type: 'font', status: 200, startTime: 100, duration: 318, ttfb: 100, size: 792 * 1024 },
+      { name: 'Pretendard-Regular.woff2', type: 'font', status: 200, startTime: 105, duration: 387, ttfb: 120, size: 766 * 1024 },
+      { name: 'Pretendard-Medium.woff2', type: 'font', status: 200, startTime: 110, duration: 437, ttfb: 130, size: 779 * 1024 },
+      { name: 'Pretendard-SemiBold.woff2', type: 'font', status: 200, startTime: 115, duration: 556, ttfb: 150, size: 786 * 1024 },
+      { name: 'styles.min.css', type: 'stylesheet', status: 200, startTime: 10, duration: 120, ttfb: 30, size: 42.1 * 1024 },
+      { name: 'common.min.css', type: 'stylesheet', status: 200, startTime: 20, duration: 100, ttfb: 25, size: 33.2 * 1024 },
+      { name: 'jquery.min.js', type: 'script', status: 200, startTime: 5, duration: 150, ttfb: 40, size: 86.5 * 1024 },
+      { name: 'main.js', type: 'script', status: 200, startTime: 25, duration: 220, ttfb: 65, size: 110 * 1024 },
+      { name: 'analytics.js', type: 'script', status: 200, startTime: 85, duration: 180, ttfb: 55, size: 45.6 * 1024 },
+      { name: 'recaptcha_ko.js', type: 'script', status: 200, startTime: 130, duration: 522, ttfb: 140, size: 225 * 1024 },
+      { name: 'api/data.json', type: 'xhr', status: 200, startTime: 200, duration: 320, ttfb: 100, size: 15.8 * 1024 }
+    ];
+    
+    // 차트 생성
+    function createWaterfallChart() {
+      // 정렬: 시작 시간 순으로
+      resourceData.sort((a, b) => a.startTime - b.startTime);
+      
+      // 차트 크기 계산
+      const chartWidth = document.querySelector('.timeline-header').offsetWidth;
+      const chartEnd = Math.max(...resourceData.map(r => r.startTime + r.duration)) * 1.1;
+      
+      // 시간 단위 변환 함수
+      const timeToPosition = time => (time / chartEnd) * chartWidth;
+      
+      // 시간 스케일 그리기
+      drawTimeScale(chartEnd, chartWidth);
+      
+      // 툴팁 생성
+      const tooltip = d3.select('#tooltip');
+      
+      // 리소스 행 생성
+      const chartContent = d3.select('#chart-content');
+      chartContent.html(''); // 기존 내용 초기화
+      
+      resourceData.forEach(resource => {
+        // 리소스 타입에 따른 색상
+        const color = getResourceColor(resource.type);
+        
+        // 대기 시간과 다운로드 시간 계산
+        const waitingTime = resource.ttfb;
+        const downloadTime = resource.duration - waitingTime;
+        
+        // 위치 및 크기 계산
+        const startPos = timeToPosition(resource.startTime);
+        const waitingWidth = timeToPosition(waitingTime);
+        const downloadWidth = timeToPosition(downloadTime);
+        
+        // 리소스 행 생성
+        const row = chartContent.append('div')
+          .attr('class', 'resource-row');
+        
+        // 리소스 이름
+        row.append('div')
+          .attr('class', 'resource-name')
+          .attr('title', resource.name)
+          .html(`<span style="display:inline-block; width:10px; height:10px; background-color:${color}; margin-right:5px; border-radius:50%;"></span>${resource.name}`);
+        
+        // 타임라인
+        const timeline = row.append('div')
+          .attr('class', 'resource-timeline');
+        
+        // 대기 시간 막대
+        timeline.append('div')
+          .attr('class', 'resource-bar bar-waiting')
+          .style('left', `${startPos}px`)
+          .style('width', `${waitingWidth}px`)
+          .style('background-color', color)
+          .on('mouseover', function(event) {
+            tooltip.html(`
+              <div><strong>${resource.name}</strong></div>
+              <div>타입: ${resource.type}</div>
+              <div>시작: ${resource.startTime} ms</div>
+              <div>TTFB: ${waitingTime} ms</div>
+              <div>다운로드: ${downloadTime} ms</div>
+              <div>총 시간: ${resource.duration} ms</div>
+              <div>크기: ${formatSize(resource.size)}</div>
+            `)
+            .style('opacity', 1)
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 30) + 'px');
+          })
+          .on('mouseout', function() {
+            tooltip.style('opacity', 0);
+          });
+        
+        // 다운로드 시간 막대
+        timeline.append('div')
+          .attr('class', 'resource-bar bar-download')
+          .style('left', `${startPos + waitingWidth}px`)
+          .style('width', `${downloadWidth}px`)
+          .style('background-color', color)
+          .on('mouseover', function(event) {
+            tooltip.html(`
+              <div><strong>${resource.name}</strong></div>
+              <div>타입: ${resource.type}</div>
+              <div>시작: ${resource.startTime} ms</div>
+              <div>TTFB: ${waitingTime} ms</div>
+              <div>다운로드: ${downloadTime} ms</div>
+              <div>총 시간: ${resource.duration} ms</div>
+              <div>크기: ${formatSize(resource.size)}</div>
+            `)
+            .style('opacity', 1)
+            .style('left', (event.pageX + 10) + 'px')
+            .style('top', (event.pageY - 30) + 'px');
+          })
+          .on('mouseout', function() {
+            tooltip.style('opacity', 0);
+          });
+        
+        // 크기 정보
+        row.append('div')
+          .attr('class', 'resource-stats')
+          .text(formatSize(resource.size));
+        
+        // 시간 정보
+        row.append('div')
+          .attr('class', 'resource-stats')
+          .text(`${resource.duration} ms`);
+      });
+    }
+    
+    // 시간 스케일 그리기
+    function drawTimeScale(chartEnd, chartWidth) {
+      const scale = d3.select('#timeline-scale');
+      scale.html(''); // 기존 내용 초기화
+      
+      // 눈금 개수 및 간격 계산
+      const numTicks = 10;
+      const tickInterval = chartEnd / numTicks;
+      
+      // 눈금 생성
+      for (let i = 0; i <= numTicks; i++) {
+        const tickValue = Math.round(i * tickInterval);
+        const tickPosition = (tickValue / chartEnd) * chartWidth;
+        
+        scale.append('div')
+          .attr('class', 'scale-marker')
+          .style('left', `${tickPosition}px`)
+          .html(`${tickValue} ms`);
+      }
+    }
+    
+    // 리소스 타입에 따른 색상 반환
+    function getResourceColor(type) {
+      const colors = {
+        'script': '#2196F3',    // 파란색
+        'stylesheet': '#4CAF50', // 녹색
+        'image': '#FF9800',      // 주황색
+        'font': '#9C27B0',       // 보라색
+        'xhr': '#F44336',        // 빨간색
+        'fetch': '#F44336',      // 빨간색
+        'other': '#607D8B'       // 회색
+      };
+      
+      return colors[type] || colors.other;
+    }
+    
+    // 바이트 크기 포맷팅
+    function formatSize(bytes) {
+      if (bytes === 0) return '0 B';
+      
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      
+      return parseFloat((bytes / Math.pow(1024, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+    
+    // 창 크기 변경 시 차트 다시 그리기
+    window.addEventListener('resize', createWaterfallChart);
+    
+    // 페이지 로드 시 차트 그리기
+    document.addEventListener('DOMContentLoaded', createWaterfallChart);
+  </script>
+</body>
+</html>

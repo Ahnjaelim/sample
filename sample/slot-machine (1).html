@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>숫자 슬롯머신</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+      margin: 0;
+    }
+    
+    .container {
+      text-align: center;
+      background-color: #fff;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    
+    .input-section {
+      margin-bottom: 20px;
+    }
+    
+    .settings {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 15px;
+      gap: 20px;
+    }
+    
+    .setting-item {
+      display: flex;
+      align-items: center;
+    }
+    
+    .setting-item label {
+      margin-right: 8px;
+    }
+    
+    .setting-item input {
+      width: 60px;
+      padding: 5px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    
+    #targetNumber {
+      padding: 10px;
+      font-size: 16px;
+      width: 150px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-right: 10px;
+    }
+    
+    #startButton {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    #startButton:hover {
+      background-color: #45a049;
+    }
+    
+    .slot-machine {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    
+    .digit-container {
+      position: relative;
+      width: 60px;
+      height: 100px;
+      margin: 0 5px;
+      overflow: hidden;
+      background-color: #333;
+      border-radius: 5px;
+      box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+    }
+    
+    .digit-strip {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      transition: top 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    
+    .digit {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100px;
+      font-size: 60px;
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+    }
+    
+    .highlight {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100px;
+      background: linear-gradient(
+        to bottom,
+        rgba(255, 255, 255, 0.2) 0%,
+        rgba(255, 255, 255, 0) 40%,
+        rgba(255, 255, 255, 0) 60%,
+        rgba(255, 255, 255, 0.2) 100%
+      );
+      pointer-events: none;
+    }
+    
+    .decimal-point {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 60px;
+      font-weight: bold;
+      color: #fff;
+      margin: 0 -2px;
+      width: 20px;
+      height: 100px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>숫자 슬롯머신</h1>
+    
+    <div class="input-section">
+      <div class="settings">
+        <div class="setting-item">
+          <label for="integerDigits">정수 자릿수:</label>
+          <input type="number" id="integerDigits" min="1" max="10" value="2">
+        </div>
+        <div class="setting-item">
+          <label for="decimalDigits">소수 자릿수:</label>
+          <input type="number" id="decimalDigits" min="0" max="10" value="2">
+        </div>
+      </div>
+      <input type="number" id="targetNumber" placeholder="숫자 입력" step="any">
+      <button id="startButton">시작</button>
+    </div>
+    
+    <div class="slot-machine" id="slotMachine">
+      <!-- 슬롯 디지털 컨테이너는 자바스크립트로 동적 생성됩니다 -->
+    </div>
+  </div>
+
+  <script>
+    $(document).ready(function() {
+      // 초기 설정
+      let intDigits = parseInt($('#integerDigits').val()) || 2;
+      let decDigits = parseInt($('#decimalDigits').val()) || 2;
+      
+      // 슬롯머신 초기화 및 설정 변경 시 업데이트
+      initSlotMachineWithFormat(intDigits, decDigits);
+      
+      $('#integerDigits, #decimalDigits').on('change', function() {
+        intDigits = parseInt($('#integerDigits').val()) || 2;
+        decDigits = parseInt($('#decimalDigits').val()) || 2;
+        initSlotMachineWithFormat(intDigits, decDigits);
+      });
+      
+      // 슬롯 디지털 컨테이너 초기화 - 소수점 포함
+      function initSlotMachineWithFormat(integerDigits, decimalDigits) {
+        const slotMachine = $('#slotMachine');
+        slotMachine.empty();
+        
+        // 정수 부분 생성
+        for (let i = 0; i < integerDigits; i++) {
+          const digitContainer = $('<div>').addClass('digit-container');
+          digitContainer.attr('data-position', i);
+          digitContainer.attr('data-type', 'integer');
+          
+          const digitStrip = $('<div>').addClass('digit-strip');
+          
+          // 0부터 9까지의 숫자 생성
+          for (let j = 0; j <= 9; j++) {
+            const digit = $('<div>').addClass('digit').text(j);
+            digitStrip.append(digit);
+          }
+          
+          // 하이라이트 효과 추가
+          const highlight = $('<div>').addClass('highlight');
+          
+          digitContainer.append(digitStrip);
+          digitContainer.append(highlight);
+          slotMachine.append(digitContainer);
+        }
+        
+        // 소수점이 있는 경우 추가
+        if (decimalDigits > 0) {
+          const decimalPoint = $('<div>').addClass('decimal-point').text('.');
+          slotMachine.append(decimalPoint);
+          
+          // 소수 부분 생성
+          for (let i = 0; i < decimalDigits; i++) {
+            const digitContainer = $('<div>').addClass('digit-container');
+            digitContainer.attr('data-position', i);
+            digitContainer.attr('data-type', 'decimal');
+            
+            const digitStrip = $('<div>').addClass('digit-strip');
+            
+            // 0부터 9까지의 숫자 생성
+            for (let j = 0; j <= 9; j++) {
+              const digit = $('<div>').addClass('digit').text(j);
+              digitStrip.append(digit);
+            }
+            
+            // 하이라이트 효과 추가
+            const highlight = $('<div>').addClass('highlight');
+            
+            digitContainer.append(digitStrip);
+            digitContainer.append(highlight);
+            slotMachine.append(digitContainer);
+          }
+        }
+      }
+      
+      // 각 자리 숫자 스핀 애니메이션
+      function spinDigit(digitContainer, targetDigit, delay) {
+        return new Promise(resolve => {
+          const digitStrip = $(digitContainer).find('.digit-strip');
+          
+          // 기본 스피닝 시간 설정 (각 자리마다 시간 차이를 두기 위함)
+          const spinDuration = 2000 + delay;
+          
+          // 초기 위치 설정 (맨 위에 0이 오도록)
+          digitStrip.css({
+            'top': '0px',
+            'transition': 'none'
+          });
+          
+          // 애니메이션 효과를 위한 타임아웃
+          setTimeout(() => {
+            // 목표 디지털로 이동
+            digitStrip.css({
+              'top': `-${targetDigit * 100}px`,
+              'transition': `top ${spinDuration}ms cubic-bezier(0.32, 0.64, 0.45, 1)`
+            });
+            
+            // 애니메이션 완료 후 콜백
+            setTimeout(() => {
+              resolve();
+            }, spinDuration);
+          }, 10);
+        });
+      }
+      
+      // 슬롯머신 스핀 시작
+      async function startSpin() {
+        const targetNumber = $('#targetNumber').val();
+        
+        if (!targetNumber) {
+          alert('숫자를 입력해주세요!');
+          return;
+        }
+        
+        // 설정된 자릿수 가져오기
+        const intDigits = parseInt($('#integerDigits').val()) || 2;
+        const decDigits = parseInt($('#decimalDigits').val()) || 2;
+        
+        // 숫자 파싱 및 포맷팅
+        let numberValue = parseFloat(targetNumber);
+        
+        // 소수점 자릿수 고정
+        numberValue = numberValue.toFixed(decDigits);
+        
+        // 숫자 문자열로 변환 후 파싱
+        const numberStr = numberValue.toString();
+        let [intPart, decPart] = numberStr.split('.');
+        
+        // 정수 부분 포맷팅 (왼쪽 0 패딩)
+        intPart = intPart.padStart(intDigits, '0');
+        
+        // 정수 부분이 설정된 자릿수보다 크면 잘라내기
+        if (intPart.length > intDigits) {
+          intPart = intPart.slice(-intDigits);
+        }
+        
+        // 소수 부분이 없으면 0으로 채우기
+        if (!decPart && decDigits > 0) {
+          decPart = '0'.repeat(decDigits);
+        }
+        
+        // 소수 부분 오른쪽 0 패딩
+        if (decPart && decPart.length < decDigits) {
+          decPart = decPart.padEnd(decDigits, '0');
+        }
+        
+        // 각 자리 숫자 스핀 시작
+        const spinPromises = [];
+        
+        // 정수 부분 스핀
+        const intContainers = $('.digit-container[data-type="integer"]');
+        for (let i = 0; i < intContainers.length; i++) {
+          const digit = intPart.charAt(i) || '0';
+          const delay = i * 300; // 각 자리마다 시작 시간에 딜레이 추가
+          spinPromises.push(spinDigit(intContainers[i], parseInt(digit), delay));
+        }
+        
+        // 소수 부분 스핀
+        const decContainers = $('.digit-container[data-type="decimal"]');
+        for (let i = 0; i < decContainers.length; i++) {
+          const digit = decPart && i < decPart.length ? decPart.charAt(i) : '0';
+          const delay = (intContainers.length + i) * 300; // 정수 부분 이후 딜레이 추가
+          spinPromises.push(spinDigit(decContainers[i], parseInt(digit), delay));
+        }
+        
+        // 모든 스핀이 완료될 때까지 대기
+        await Promise.all(spinPromises);
+        console.log('모든 스핀 완료!');
+      }
+      
+      // 시작 버튼 클릭 이벤트 
+      $('#startButton').on('click', startSpin);
+      
+      // 엔터 키 이벤트
+      $('#targetNumber').on('keypress', function(e) {
+        if (e.which === 13) {
+          startSpin();
+        }
+      });
+      
+      // 초기 슬롯머신 설정
+      initSlotMachineWithFormat(intDigits, decDigits);
+    });
+  </script>
+</body>
+</html>

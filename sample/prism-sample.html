@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prism.js Sample</title>
+    
+    <!-- Link to Prism CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            padding: 20px;
+            background-color: #f7f7f7;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .code-section {
+            margin-bottom: 40px;
+        }
+        
+        .code-section h2 {
+            margin-bottom: 15px;
+            color: #3498db;
+            font-size: 1.5rem;
+        }
+        
+        .code-description {
+            margin-bottom: 15px;
+            color: #555;
+        }
+        
+        pre[class*="language-"] {
+            margin: 1em 0;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+        
+        .language-selector {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .language-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .language-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .language-btn.active {
+            background-color: #2c3e50;
+        }
+        
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Prism.js 코드 하이라이터 샘플</h1>
+        
+        <div class="language-selector">
+            <button class="language-btn active" data-language="html">HTML</button>
+            <button class="language-btn" data-language="css">CSS</button>
+            <button class="language-btn" data-language="javascript">JavaScript</button>
+            <button class="language-btn" data-language="python">Python</button>
+            <button class="language-btn" data-language="java">Java</button>
+        </div>
+        
+        <!-- HTML Code Sample -->
+        <div class="code-section" id="html-section">
+            <h2>HTML 예제</h2>
+            <p class="code-description">반응형 웹 페이지의 기본 HTML 구조 예제입니다.</p>
+            <pre class="line-numbers"><code class="language-html">&lt;!DOCTYPE html&gt;
+&lt;html lang="ko"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;반응형 웹 페이지&lt;/title&gt;
+    &lt;link rel="stylesheet" href="styles.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;header&gt;
+        &lt;nav&gt;
+            &lt;ul&gt;
+                &lt;li&gt;&lt;a href="#home"&gt;홈&lt;/a&gt;&lt;/li&gt;
+                &lt;li&gt;&lt;a href="#about"&gt;소개&lt;/a&gt;&lt;/li&gt;
+                &lt;li&gt;&lt;a href="#services"&gt;서비스&lt;/a&gt;&lt;/li&gt;
+                &lt;li&gt;&lt;a href="#contact"&gt;연락처&lt;/a&gt;&lt;/li&gt;
+            &lt;/ul&gt;
+        &lt;/nav&gt;
+    &lt;/header&gt;
+
+    &lt;main&gt;
+        &lt;section id="home"&gt;
+            &lt;h1&gt;환영합니다&lt;/h1&gt;
+            &lt;p&gt;최신 웹 기술을 활용한 반응형 웹사이트입니다.&lt;/p&gt;
+        &lt;/section&gt;
+    &lt;/main&gt;
+
+    &lt;footer&gt;
+        &lt;p&gt;&copy; 2025 웹사이트. All rights reserved.&lt;/p&gt;
+    &lt;/footer&gt;
+
+    &lt;script src="script.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+        </div>
+        
+        <!-- CSS Code Sample -->
+        <div class="code-section" id="css-section" style="display: none;">
+            <h2>CSS 예제</h2>
+            <p class="code-description">반응형 레이아웃을 위한 CSS 스타일 예제입니다.</p>
+            <pre class="line-numbers"><code class="language-css">/* 기본 스타일 리셋 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    line-height: 1.6;
+    color: #333;
+}
+
+/* 헤더 스타일 */
+header {
+    background-color: #2c3e50;
+    padding: 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+nav ul {
+    display: flex;
+    justify-content: center;
+    list-style: none;
+}
+
+nav ul li {
+    margin: 0 1rem;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s;
+}
+
+nav a:hover {
+    color: #3498db;
+}
+
+/* 메인 콘텐츠 */
+main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+section {
+    margin-bottom: 3rem;
+}
+
+/* 반응형 미디어 쿼리 */
+@media (max-width: 768px) {
+    nav ul {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    nav ul li {
+        margin: 0.5rem 0;
+    }
+}</code></pre>
+        </div>
+        
+        <!-- JavaScript Code Sample -->
+        <div class="code-section" id="javascript-section" style="display: none;">
+            <h2>JavaScript 예제</h2>
+            <p class="code-description">인터랙티브한 기능을 구현하는 JavaScript 예제입니다.</p>
+            <pre class="line-numbers"><code class="language-javascript">// DOM이 로드된 후 실행
+document.addEventListener('DOMContentLoaded', () => {
+    // 요소 선택
+    const navLinks = document.querySelectorAll('nav a');
+    const sections = document.querySelectorAll('section');
+    
+    // 스크롤 이벤트 리스너
+    window.addEventListener('scroll', () => {
+        // 현재 스크롤 위치
+        const scrollPosition = window.scrollY;
+        
+        // 각 섹션을 확인하여 현재 보이는 섹션 활성화
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop - 100;
+            const sectionBottom = sectionTop + section.offsetHeight;
+            
+            if (scrollPosition >= sectionTop && scrollPosition < sectionBottom) {
+                const id = section.getAttribute('id');
+                
+                // 활성 네비게이션 링크 업데이트
+                navLinks.forEach(link => {
+                    if (link.getAttribute('href') === `#${id}`) {
+                        link.classList.add('active');
+                    } else {
+                        link.classList.remove('active');
+                    }
+                });
+            }
+        });
+    });
+    
+    // 모바일 메뉴 토글 기능
+    const menuToggle = document.getElementById('menu-toggle');
+    const navMenu = document.querySelector('nav ul');
+    
+    if (menuToggle) {
+        menuToggle.addEventListener('click', () => {
+            navMenu.classList.toggle('show');
+        });
+    }
+    
+    // 부드러운 스크롤 기능
+    navLinks.forEach(link => {
+        link.addEventListener('click', e => {
+            e.preventDefault();
+            
+            const targetId = link.getAttribute('href').substring(1);
+            const targetSection = document.getElementById(targetId);
+            
+            if (targetSection) {
+                window.scrollTo({
+                    top: targetSection.offsetTop - 70,
+                    behavior: 'smooth'
+                });
+                
+                // 모바일 메뉴 닫기
+                navMenu.classList.remove('show');
+            }
+        });
+    });
+});</code></pre>
+        </div>
+        
+        <!-- Python Code Sample -->
+        <div class="code-section" id="python-section" style="display: none;">
+            <h2>Python 예제</h2>
+            <p class="code-description">데이터 분석과 시각화를 위한 Python 코드 예제입니다.</p>
+            <pre class="line-numbers"><code class="language-python">import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score
+
+# 데이터 로드
+def load_data(file_path):
+    """CSV 파일에서 데이터를 로드합니다."""
+    try:
+        data = pd.read_csv(file_path)
+        print(f"데이터 로드 완료: {data.shape[0]}행, {data.shape[1]}열")
+        return data
+    except Exception as e:
+        print(f"데이터 로드 중 오류 발생: {e}")
+        return None
+
+# 데이터 전처리
+def preprocess_data(data):
+    """데이터 전처리 및 결측치 처리"""
+    # 결측치 확인
+    missing_values = data.isnull().sum()
+    print(f"결측치 개수:\n{missing_values[missing_values > 0]}")
+    
+    # 결측치 처리
+    data_cleaned = data.dropna()
+    
+    # 이상치 제거
+    numeric_columns = data_cleaned.select_dtypes(include=['float64', 'int64']).columns
+    for column in numeric_columns:
+        q1 = data_cleaned[column].quantile(0.25)
+        q3 = data_cleaned[column].quantile(0.75)
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        data_cleaned = data_cleaned[(data_cleaned[column] >= lower_bound) & 
+                                    (data_cleaned[column] <= upper_bound)]
+    
+    return data_cleaned
+
+# 주요 함수 실행
+if __name__ == "__main__":
+    # 데이터 로드 및 전처리
+    file_path = "sample_data.csv"
+    data = load_data(file_path)
+    
+    if data is not None:
+        # 데이터 전처리
+        data_cleaned = preprocess_data(data)
+        
+        # 특성과 타겟 분리
+        X = data_cleaned[['feature1', 'feature2', 'feature3']]
+        y = data_cleaned['target']
+        
+        # 훈련/테스트 세트 분리
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42)
+        
+        # 모델 학습
+        model = LinearRegression()
+        model.fit(X_train, y_train)
+        
+        # 예측 및 평가
+        y_pred = model.predict(X_test)
+        mse = mean_squared_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
+        
+        print(f"평균 제곱 오차: {mse:.4f}")
+        print(f"결정 계수 (R²): {r2:.4f}")
+        
+        # 시각화
+        plt.figure(figsize=(10, 6))
+        sns.scatterplot(x=y_test, y=y_pred)
+        plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], 'k--')
+        plt.xlabel('실제 값')
+        plt.ylabel('예측 값')
+        plt.title('실제 값 vs 예측 값')
+        plt.tight_layout()
+        plt.show()</code></pre>
+        </div>
+        
+        <!-- Java Code Sample -->
+        <div class="code-section" id="java-section" style="display: none;">
+            <h2>Java 예제</h2>
+            <p class="code-description">자바를 활용한 객체지향 프로그래밍 예제입니다.</p>
+            <pre class="line-numbers"><code class="language-java">import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+/**
+ * 간단한 학생 관리 시스템 예제
+ */
+public class StudentManagementSystem {
+    
+    private List<Student> students;
+    private Scanner scanner;
+    
+    public StudentManagementSystem() {
+        students = new ArrayList<>();
+        scanner = new Scanner(System.in);
+    }
+    
+    public void run() {
+        boolean running = true;
+        
+        while (running) {
+            System.out.println("\n===== 학생 관리 시스템 =====");
+            System.out.println("1. 학생 등록");
+            System.out.println("2. 전체 학생 목록");
+            System.out.println("3. 학생 검색");
+            System.out.println("4. 학생 정보 수정");
+            System.out.println("5. 학생 삭제");
+            System.out.println("0. 종료");
+            System.out.print("메뉴 선택: ");
+            
+            int choice = scanner.nextInt();
+            scanner.nextLine(); // 버퍼 비우기
+            
+            switch (choice) {
+                case 1:
+                    addStudent();
+                    break;
+                case 2:
+                    displayAllStudents();
+                    break;
+                case 3:
+                    searchStudent();
+                    break;
+                case 4:
+                    updateStudent();
+                    break;
+                case 5:
+                    deleteStudent();
+                    break;
+                case 0:
+                    running = false;
+                    System.out.println("프로그램을 종료합니다.");
+                    break;
+                default:
+                    System.out.println("잘못된 메뉴 선택입니다. 다시 시도하세요.");
+            }
+        }
+        
+        scanner.close();
+    }
+    
+    private void addStudent() {
+        System.out.println("\n===== 학생 등록 =====");
+        System.out.print("학번: ");
+        String id = scanner.nextLine();
+        
+        // 중복 확인
+        if (findStudentById(id) != null) {
+            System.out.println("이미 등록된 학번입니다.");
+            return;
+        }
+        
+        System.out.print("이름: ");
+        String name = scanner.nextLine();
+        
+        System.out.print("나이: ");
+        int age = scanner.nextInt();
+        scanner.nextLine(); // 버퍼 비우기
+        
+        System.out.print("전공: ");
+        String major = scanner.nextLine();
+        
+        Student student = new Student(id, name, age, major);
+        students.add(student);
+        
+        System.out.println("학생이 등록되었습니다.");
+    }
+    
+    private void displayAllStudents() {
+        System.out.println("\n===== 전체 학생 목록 =====");
+        
+        if (students.isEmpty()) {
+            System.out.println("등록된 학생이 없습니다.");
+            return;
+        }
+        
+        for (Student student : students) {
+            System.out.println(student);
+        }
+    }
+    
+    private void searchStudent() {
+        System.out.println("\n===== 학생 검색 =====");
+        System.out.print("검색할 학번: ");
+        String id = scanner.nextLine();
+        
+        Student student = findStudentById(id);
+        
+        if (student == null) {
+            System.out.println("해당 학번의 학생이 없습니다.");
+        } else {
+            System.out.println("검색 결과: " + student);
+        }
+    }
+    
+    private void updateStudent() {
+        System.out.println("\n===== 학생 정보 수정 =====");
+        System.out.print("수정할 학생의 학번: ");
+        String id = scanner.nextLine();
+        
+        Student student = findStudentById(id);
+        
+        if (student == null) {
+            System.out.println("해당 학번의 학생이 없습니다.");
+            return;
+        }
+        
+        System.out.print("새 이름(" + student.getName() + "): ");
+        String name = scanner.nextLine();
+        if (!name.isEmpty()) {
+            student.setName(name);
+        }
+        
+        System.out.print("새 나이(" + student.getAge() + "): ");
+        String ageStr = scanner.nextLine();
+        if (!ageStr.isEmpty()) {
+            student.setAge(Integer.parseInt(ageStr));
+        }
+        
+        System.out.print("새 전공(" + student.getMajor() + "): ");
+        String major = scanner.nextLine();
+        if (!major.isEmpty()) {
+            student.setMajor(major);
+        }
+        
+        System.out.println("학생 정보가 수정되었습니다.");
+    }
+    
+    private void deleteStudent() {
+        System.out.println("\n===== 학생 삭제 =====");
+        System.out.print("삭제할 학생의 학번: ");
+        String id = scanner.nextLine();
+        
+        Student student = findStudentById(id);
+        
+        if (student == null) {
+            System.out.println("해당 학번의 학생이 없습니다.");
+            return;
+        }
+        
+        students.remove(student);
+        System.out.println("학생이 삭제되었습니다.");
+    }
+    
+    private Student findStudentById(String id) {
+        for (Student student : students) {
+            if (student.getId().equals(id)) {
+                return student;
+            }
+        }
+        return null;
+    }
+    
+    public static void main(String[] args) {
+        StudentManagementSystem system = new StudentManagementSystem();
+        system.run();
+    }
+}
+
+class Student {
+    private String id;
+    private String name;
+    private int age;
+    private String major;
+    
+    public Student(String id, String name, int age, String major) {
+        this.id = id;
+        this.name = name;
+        this.age = age;
+        this.major = major;
+    }
+    
+    // Getters and Setters
+    public String getId() {
+        return id;
+    }
+    
+    public String getName() {
+        return name;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+    
+    public int getAge() {
+        return age;
+    }
+    
+    public void setAge(int age) {
+        this.age = age;
+    }
+    
+    public String getMajor() {
+        return major;
+    }
+    
+    public void setMajor(String major) {
+        this.major = major;
+    }
+    
+    @Override
+    public String toString() {
+        return "학번: " + id + ", 이름: " + name + ", 나이: " + age + ", 전공: " + major;
+    }
+}</code></pre>
+        </div>
+        
+        <footer>
+            <p>Prism.js를 활용한 코드 하이라이트 예제 - 2025</p>
+        </footer>
+    </div>
+    
+    <!-- Prism JS (core + plugins) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/toolbar/prism-toolbar.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/copy-to-clipboard/prism-copy-to-clipboard.min.js"></script>
+    
+    <script>
+        // 언어 선택 기능
+        document.addEventListener('DOMContentLoaded', () => {
+            const languageBtns = document.querySelectorAll('.language-btn');
+            const codeSections = document.querySelectorAll('.code-section');
+            
+            languageBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // 활성 버튼 변경
+                    languageBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // 선택된 언어의 코드 섹션 표시
+                    const language = btn.getAttribute('data-language');
+                    codeSections.forEach(section => {
+                        if (section.id === `${language}-section`) {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    });
+                    
+                    // Prism 재초기화 (필요한 경우)
+                    if (window.Prism) {
+                        Prism.highlightAll();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

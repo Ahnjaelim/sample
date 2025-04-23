@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DL with Multiple Terms/Definitions per Row</title>
+    <style>
+        dl {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        /* Each row contains multiple dt/dd pairs */
+        .row {
+            display: table-row;
+        }
+        
+        dt, dd {
+            display: table-cell;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        dt {
+            font-weight: bold;
+            width: 15%;
+            background-color: #f5f5f5;
+        }
+        
+        dd {
+            width: 35%;
+        }
+    </style>
+</head>
+<body>
+    <h2>Definition List with Multiple Terms and Definitions per Row</h2>
+    
+    <dl>
+        <div class="row">
+            <dt>Term 1</dt>
+            <dd>Definition 1</dd>
+            <dt>Term 2</dt>
+            <dd>Definition 2</dd>
+        </div>
+        <div class="row">
+            <dt>Term 3</dt>
+            <dd>Definition 3</dd>
+            <dt>Term 4</dt>
+            <dd>Definition 4</dd>
+        </div>
+        <div class="row">
+            <dt>Term 5</dt>
+            <dd>Definition 5</dd>
+            <dt>Term 6</dt>
+            <dd>Definition 6</dd>
+        </div>
+    </dl>
+</body>
+</html>

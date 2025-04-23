@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DL Table Layout</title>
+    <style>
+        dl {
+            display: table;
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        /* Each row group (dt+dd pair) acts as a table row */
+        dl > div {
+            display: table-row;
+        }
+        
+        dt, dd {
+            display: table-cell;
+            padding: 8px;
+            border: 1px solid #ddd;
+        }
+        
+        dt {
+            font-weight: bold;
+            width: 30%;
+            background-color: #f5f5f5;
+        }
+        
+        dd {
+            width: 70%;
+        }
+    </style>
+</head>
+<body>
+    <h2>Definition List as Table Layout</h2>
+    
+    <dl>
+        <div>
+            <dt>Term 1</dt>
+            <dd>Definition 1</dd>
+        </div>
+        <div>
+            <dt>Term 2</dt>
+            <dd>Definition 2</dd>
+        </div>
+        <div>
+            <dt>Term 3</dt>
+            <dd>Definition 3</dd>
+        </div>
+    </dl>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Highcharts Synchronized Charts</title>
+  <style>
+    .highcharts-figure,
+    .highcharts-data-table table {
+      min-width: 320px;
+      max-width: 800px;
+      margin: 1em auto;
+    }
+
+    .highcharts-figure {
+      padding: 10px;
+    }
+
+    .chart {
+      height: 220px;
+    }
+
+    .highcharts-data-table table {
+      font-family: Verdana, sans-serif;
+      border-collapse: collapse;
+      border: 1px solid #ebebeb;
+      margin: 10px auto;
+      text-align: center;
+      width: 100%;
+      max-width: 500px;
+    }
+
+    .highcharts-data-table caption {
+      padding: 1em 0;
+      font-size: 1.2em;
+      color: #555;
+    }
+
+    .highcharts-data-table th {
+      font-weight: 600;
+      padding: 0.5em;
+    }
+
+    .highcharts-data-table td,
+    .highcharts-data-table th,
+    .highcharts-data-table caption {
+      padding: 0.5em;
+    }
+
+    .highcharts-data-table thead tr,
+    .highcharts-data-table tbody tr:nth-child(even) {
+      background: #f8f8f8;
+    }
+
+    .highcharts-data-table tr:hover {
+      background: #f1f7ff;
+    }
+  </style>
+</head>
+<body>
+  <figure class="highcharts-figure">
+    <div id="container"></div>
+    <p class="highcharts-description">
+      이 데모는 관련 차트들이 어떻게 동기화될 수 있는지 보여줍니다. 하나의 차트 위에 마우스를 올리면
+      다른 차트들에도 동일한 효과가 나타납니다. 이 기술은 대시보드에서 자주 볼 수 있으며,
+      여러 차트를 사용하여 관련 정보를 시각화하는 데 흔히 사용됩니다.
+    </p>
+    <a href="https://www.highcharts.com/demo/dashboards/sync" target="_blank">
+      Highcharts 대시보드를 사용한 동기화 대체 접근법 보기
+    </a>
+  </figure>
+
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+  <script>
+    // 차트 DOM 및 Highcharts 이벤트와 API 메서드를 통해 여러 차트를 연결하는 방법을 보여줍니다.
+    // 각 데이터 세트에 대한 작은 변형이 있는 표준 Highcharts 구성과
+    // 차트를 함께 바인딩하는 마우스/터치 이벤트 핸들러를 사용합니다.
+
+    /**
+     * 툴팁과 십자선을 동기화하기 위해 내장 이벤트를
+     * 부모 요소에 정의된 핸들러로 재정의합니다.
+     */
+    ['mousemove', 'touchmove', 'touchstart'].forEach(function (eventType) {
+      document.getElementById('container').addEventListener(
+        eventType,
+        function (e) {
+          let chart, point, i, event;
+
+          for (i = 0; i < Highcharts.charts.length; i = i + 1) {
+            chart = Highcharts.charts[i];
+            // 차트 내에서 좌표 찾기
+            event = chart.pointer.normalize(e);
+            // 마우스 오버된 포인트 가져오기
+            point = chart.series[0].searchPoint(event, true);
+
+            if (point) {
+              point.highlight(e);
+            }
+          }
+        }
+      );
+    });
+
+    /**
+     * 리셋 함수를 재정의합니다. 툴팁과 십자선을 숨길 필요가 없습니다.
+     */
+    Highcharts.Pointer.prototype.reset = function () {
+      return undefined;
+    };
+
+    /**
+     * 툴팁을 표시하고, 호버 상태를 설정하고, 십자선을 그려 포인트를 강조 표시합니다.
+     */
+    Highcharts.Point.prototype.highlight = function (event) {
+      event = this.series.chart.pointer.normalize(event);
+      this.onMouseOver(); // 호버 마커 표시
+      this.series.chart.tooltip.refresh(this); // 툴팁 표시
+      this.series.chart.xAxis[0].drawCrosshair(event, this); // 십자선 표시
+    };
+
+    /**
+     * setExtremes 이벤트 핸들러를 통해 범위(확대/축소)를 동기화합니다.
+     */
+    function syncExtremes(e) {
+      const thisChart = this.chart;
+
+      if (e.trigger !== 'syncExtremes') { // 피드백 루프 방지
+        Highcharts.charts.forEach(chart => {
+          if (chart !== thisChart) {
+            if (chart.xAxis[0].setExtremes) { // 업데이트 중에는 null입니다
+              chart.xAxis[0].setExtremes(
+                e.min,
+                e.max,
+                undefined,
+                false,
+                { trigger: 'syncExtremes' }
+              );
+            }
+          }
+        });
+      }
+    }
+
+    /**
+     * 선택 이벤트에서 차트 줌을 재설정합니다.
+     */
+    function resetZoom(e) {
+      // 피드백 루프 방지
+      if (e.resetSelection) {
+        return;
+      }
+
+      // 선택 시 다른 모든 차트 축소
+      Highcharts.charts.forEach(chart => {
+        if (chart !== e.target) {
+          chart.zoomOut();
+        }
+      });
+    }
+
+    // 데이터를 가져와 차트 생성 시작
+    (async () => {
+      // 데이터 가져오기
+      const activity = await fetch(
+        'https://www.highcharts.com/samples/data/activity.json'
+      ).then(res => res.json());
+
+      // 데이터 세트를 반복하고 각각 하나의 차트 생성
+      activity.datasets.forEach(function (dataset, i) {
+        // X 값 추가
+        dataset.data = dataset.data.map((val, j) => [activity.xData[j], val]);
+
+        const chartDiv = document.createElement('div');
+        chartDiv.className = 'chart';
+        document.getElementById('container').appendChild(chartDiv);
+
+        Highcharts.chart(chartDiv, {
+          chart: {
+            marginLeft: 40, // 모든 차트를 왼쪽 정렬로 유지
+            spacingTop: 20,
+            spacingBottom: 20,
+            zooming: {
+              type: 'x'
+            },
+            events: {
+              selection: resetZoom
+            }
+          },
+          title: {
+            text: dataset.name,
+            align: 'left',
+            margin: 0,
+            x: 30
+          },
+          credits: {
+            enabled: false
+          },
+          legend: {
+            enabled: false
+          },
+          xAxis: {
+            crosshair: true,
+            events: {
+              setExtremes: syncExtremes
+            },
+            labels: {
+              format: '{value} km'
+            },
+            accessibility: {
+              description: '킬로미터',
+              rangeDescription: '0km에서 6.5km'
+            }
+          },
+          yAxis: {
+            title: {
+              text: null
+            }
+          },
+          tooltip: {
+            fixed: true,
+            position: {
+              align: 'right',
+              relativeTo: 'spacingBox',
+              y: -2
+            },
+            padding: 0,
+            pointFormat: '{point.y}',
+            backgroundColor: 'none',
+            headerFormat: '',
+            shadow: false,
+            style: {
+              fontSize: '18px'
+            },
+            valueDecimals: dataset.valueDecimals
+          },
+          series: [{
+            data: dataset.data,
+            name: dataset.name,
+            type: dataset.type,
+            color: Highcharts.getOptions().colors[i],
+            fillOpacity: 0.3,
+            tooltip: {
+              valueSuffix: ' ' + dataset.unit
+            }
+          }]
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>트랜잭션 워터폴 차트</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+        }
+        .transaction-section {
+            margin-bottom: 30px;
+            border: 1px solid #eaeaea;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .transaction-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .transaction-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #333;
+        }
+        .transaction-summary {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .transaction-summary span {
+            font-weight: bold;
+            color: #444;
+        }
+        .waterfall-container {
+            display: flex;
+            position: relative;
+            margin-top: 15px;
+        }
+        .info-labels {
+            width: 150px;
+            padding-right: 10px;
+            flex-shrink: 0;
+        }
+        .time-labels {
+            width: 60px;
+            text-align: right;
+            padding-right: 10px;
+            flex-shrink: 0;
+        }
+        .label-row {
+            height: 30px;
+            line-height: 30px;
+            font-size: 13px;
+            color: #555;
+        }
+        .time-label {
+            height: 30px;
+            line-height: 30px;
+            font-size: 13px;
+            color: #555;
+            text-align: right;
+        }
+        .chart-area {
+            flex-grow: 1;
+            position: relative;
+            border-left: 1px solid #ddd;
+            min-height: 150px;
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        .grid-line {
+            border-right: 1px solid #eee;
+            height: 100%;
+        }
+        .waterfall-bar {
+            position: absolute;
+            height: 12px;
+            border-radius: 2px;
+            margin-top: 9px;
+        }
+        .waterfall-bar:hover {
+            height: 14px;
+            margin-top: 8px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+        .page-bar {
+            background-color: #4CAF50;
+        }
+        .query-bar {
+            background-color: #2196F3;
+        }
+        .delay-bar {
+            background-color: #FFC107;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 12px;
+            color: #333;
+            display: none;
+            z-index: 100;
+            min-width: 200px;
+        }
+        .tooltip-time {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #1565C0;
+        }
+        .legend {
+            display: flex;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            margin-right: 6px;
+        }
+        .toggle-button {
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 3px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .toggle-button:hover {
+            background-color: #e9e9e9;
+        }
+    </style>
+</head>
+<body>
+    <div class="transaction-section">
+        <div class="transaction-header">
+            <h3 id="pageName">트랜잭션 데이터 로딩 중...</h3>
+            <button class="toggle-button" id="toggleQueries">쿼리 표시 전환</button>
+        </div>
+        <div class="transaction-summary">요청 ID: <span id="requestId">로딩 중...</span></div>
+        <div class="transaction-summary">처리 시간: <span id="processingTime">로딩 중...</span></div>
+        <div class="transaction-summary">요청 시간: <span id="requestTime">로딩 중...</span></div>
+        
+        <div class="waterfall-container">
+            <div class="info-labels" id="infoLabels"></div>
+            <div class="time-labels" id="timeLabels"></div>
+            <div class="chart-area" id="chartArea">
+                <div class="chart-grid" id="chartGrid"></div>
+                <!-- 워터폴 바들이 여기 추가됩니다 -->
+            </div>
+        </div>
+        
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #4CAF50;"></div>
+                <div>페이지 처리</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #2196F3;"></div>
+                <div>쿼리 실행</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: #FFC107;"></div>
+                <div>기타 네트워크 지연</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tooltip" id="tooltip"></div>
+
+    <script>
+        function renderWaterfallChart(displayData, queries) {
+            // 기존 차트 내용 초기화
+            $('#infoLabels').empty();
+            $('#timeLabels').empty();
+            $('#chartGrid').empty();
+            $('.waterfall-bar').remove();
+            
+            // 기본 정보 표시
+            $('#pageName').text(`트랜잭션: ${displayData.page_name}`);
+            $('#requestId').text(displayData.request_id);
+            $('#processingTime').text(`${displayData.request_processing_time} ms`);
+            $('#requestTime').text(displayData.request_time);
+            
+            // 그리드 라인 생성
+            for (let i = 0; i < 10; i++) {
+                $('#chartGrid').append('<div class="grid-line"></div>');
+            }
+            
+            // 페이지 요청 시간 구간 계산
+            const pageStartTime = new Date(displayData.request_time).getTime();
+            const pageEndTime = new Date(displayData.response_time).getTime();
+            const pageDuration = pageEndTime - pageStartTime;
+            
+            // 페이지 처리 항목
+            $('#infoLabels').append(`<div class="label-row">페이지 처리</div>`);
+            $('#timeLabels').append(`<div class="time-label">${displayData.request_processing_time} ms</div>`);
+            
+            // 쿼리와 지연 시간을 계산하기 위한 처리
+            let queryTotalTime = 0;
+            let delaySegments = [];
+            let lastEndTime = pageStartTime;
+            
+            // 쿼리 데이터 시간순 정렬
+            if (queries && queries.length > 0) {
+                // 쿼리를 시작 시간 기준으로 정렬
+                const sortedQueries = [...queries].sort((a, b) => {
+                    return new Date(a.request_time).getTime() - new Date(b.request_time).getTime();
+                });
+                
+                // 쿼리 표시 및 지연 시간 계산
+                sortedQueries.forEach((query, qIdx) => {
+                    const queryStartTime = new Date(query.request_time).getTime();
+                    const queryEndTime = new Date(query.response_time).getTime();
+                    
+                    // 쿼리 전의 지연 시간 계산
+                    if (queryStartTime > lastEndTime) {
+                        delaySegments.push({
+                            start: lastEndTime,
+                            end: queryStartTime,
+                            duration: queryStartTime - lastEndTime
+                        });
+                    }
+                    
+                    // 쿼리 항목 추가
+                    $('#infoLabels').append(`<div class="label-row query-section">쿼리 ${qIdx + 1}</div>`);
+                    $('#timeLabels').append(`<div class="time-label query-section">${query.request_processing_time} ms</div>`);
+                    
+                    // 쿼리 막대 생성
+                    const queryStartRatio = (queryStartTime - pageStartTime) / pageDuration;
+                    const queryDurationRatio = query.request_processing_time / pageDuration;
+                    
+                    const queryBar = $('<div class="waterfall-bar query-bar query-section"></div>');
+                    queryBar.css({
+                        width: `${queryDurationRatio * 100}%`,
+                        left: `${queryStartRatio * 100}%`,
+                        top: `${(qIdx + 1) * 30 + 9}px`
+                    });
+                    
+                    // 쿼리 툴팁 추가
+                    queryBar.hover(
+                        function(e) {
+                            $('#tooltip').html(`
+                                <div class="tooltip-time">쿼리 ${qIdx + 1}: ${query.request_processing_time} ms</div>
+                                <div>요청 시간: ${formatTime(new Date(query.request_time))}</div>
+                                <div>응답 시간: ${formatTime(new Date(query.response_time))}</div>
+                                <div>페이지 시작부터 지연: ${queryStartTime - pageStartTime} ms</div>
+                                <div>전체 대비 위치: ${(queryStartRatio * 100).toFixed(1)}%</div>
+                            `).css({
+                                left: e.pageX + 10,
+                                top: e.pageY + 10
+                            }).show();
+                        },
+                        function() {
+                            $('#tooltip').hide();
+                        }
+                    );
+                    
+                    $('#chartArea').append(queryBar);
+                    
+                    // 쿼리 처리 시간 누적
+                    queryTotalTime += query.request_processing_time;
+                    
+                    // 마지막 종료 시간 갱신
+                    lastEndTime = Math.max(lastEndTime, queryEndTime);
+                });
+                
+                // 마지막 쿼리 이후 지연 시간 확인
+                if (pageEndTime > lastEndTime) {
+                    delaySegments.push({
+                        start: lastEndTime,
+                        end: pageEndTime,
+                        duration: pageEndTime - lastEndTime
+                    });
+                }
+            }
+            
+            // 총 지연 시간 계산
+            const totalDelayTime = delaySegments.reduce((sum, segment) => sum + segment.duration, 0);
+            
+            // 기타 네트워크 지연 항목 (마지막 줄에 한 번만 추가)
+            $('#infoLabels').append(`<div class="label-row delay-section">기타 네트워크 지연</div>`);
+            $('#timeLabels').append(`<div class="time-label delay-section">${totalDelayTime} ms</div>`);
+            
+            // 지연 시간 세그먼트를 개별 막대로 표시
+            delaySegments.forEach((segment, idx) => {
+                const startRatio = (segment.start - pageStartTime) / pageDuration;
+                const durationRatio = segment.duration / pageDuration;
+                
+                const delayBar = $('<div class="waterfall-bar delay-bar delay-section"></div>');
+                delayBar.css({
+                    width: `${durationRatio * 100}%`,
+                    left: `${startRatio * 100}%`,
+                    top: `${(queries.length + 1) * 30 + 9}px`
+                });
+                
+                // 툴팁 추가
+                delayBar.hover(
+                    function(e) {
+                        $('#tooltip').html(`
+                            <div class="tooltip-time">네트워크 지연: ${segment.duration} ms</div>
+                            <div>시작 시간: ${formatTime(new Date(segment.start))}</div>
+                            <div>종료 시간: ${formatTime(new Date(segment.end))}</div>
+                            <div>전체 대비 위치: ${(startRatio * 100).toFixed(1)}%</div>
+                        `).css({
+                            left: e.pageX + 10,
+                            top: e.pageY + 10
+                        }).show();
+                    },
+                    function() {
+                        $('#tooltip').hide();
+                    }
+                );
+                
+                $('#chartArea').append(delayBar);
+            });
+            
+            // 페이지 바 생성 (전체 너비로 표시)
+            const pageBar = $('<div class="waterfall-bar page-bar"></div>');
+            pageBar.css({
+                width: '100%',
+                left: '0px',
+                top: '9px'
+            });
+            
+            // 툴팁 이벤트 추가
+            pageBar.hover(
+                function(e) {
+                    $('#tooltip').html(`
+                        <div class="tooltip-time">페이지 처리: ${displayData.request_processing_time} ms</div>
+                        <div>페이지: ${displayData.page_name}</div>
+                        <div>요청 시간: ${formatTime(new Date(displayData.request_time))}</div>
+                        <div>응답 시간: ${formatTime(new Date(displayData.response_time))}</div>
+                        <div>쿼리 실행 시간: ${queryTotalTime} ms (${((queryTotalTime/displayData.request_processing_time)*100).toFixed(1)}%)</div>
+                        <div>네트워크 지연: ${totalDelayTime} ms (${((totalDelayTime/displayData.request_processing_time)*100).toFixed(1)}%)</div>
+                    `).css({
+                        left: e.pageX + 10,
+                        top: e.pageY + 10
+                    }).show();
+                },
+                function() {
+                    $('#tooltip').hide();
+                }
+            );
+            
+            $('#chartArea').append(pageBar);
+            
+            // 차트 영역의 높이 조정
+            const chartHeight = (queries.length + 2) * 30 + 20; // 페이지 + 쿼리들 + 네트워크 지연
+            $('#chartArea').css('height', chartHeight + 'px');
+            
+            // 마우스 이동에 따른 툴팁 위치 업데이트
+            $(document).on('mousemove', function(e) {
+                if ($('#tooltip').is(':visible')) {
+                    $('#tooltip').css({
+                        left: e.pageX + 10,
+                        top: e.pageY + 10
+                    });
+                }
+            });
+            
+            // 쿼리 및 지연 표시 전환 버튼
+            $('#toggleQueries').off('click').on('click', function() {
+                $('.query-section, .delay-section').toggle();
+            });
+        }
+        
+        // 시간 포맷팅 함수
+        function formatTime(date) {
+            return date.toLocaleTimeString('ko-KR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                fractionalSecondDigits: 3
+            });
+        }
+        
+        // 샘플 데이터로 초기 렌더링
+        $(document).ready(function() {
+            const sampleDisplayData = {
+                rm_no: 30859,
+                page_no: 1544,
+                request_time: '2025-04-08T07:44:05.220+00:00',
+                response_time: '2025-04-08T07:44:05.460+00:00',
+                request_processing_time: 240,
+                page_name: "selectSiteList.do",
+                request_id: "9b4d3ab5-cbbe-4f61-ad6c-4b25d827a4d0"
+            };
+            
+            const sampleQueries = [
+                {
+                    rm_no: 30859,
+                    page_no: 0,
+                    request_time: '2025-04-08T07:44:05.226+00:00',
+                    response_time: '2025-04-08T07:44:05.231+00:00',
+                    request_processing_time: 5
+                },
+                {
+                    rm_no: 30859,
+                    page_no: 0,
+                    request_time: '2025-04-08T07:44:05.238+00:00',
+                    response_time: '2025-04-08T07:44:05.254+00:00',
+                    request_processing_time: 16
+                },
+                {
+                    rm_no: 30859,
+                    page_no: 0,
+                    request_time: '2025-04-08T07:44:05.263+00:00',
+                    response_time: '2025-04-08T07:44:05.382+00:00',
+                    request_processing_time: 119
+                }
+            ];
+            
+            // 차트 렌더링
+            renderWaterfallChart(sampleDisplayData, sampleQueries);
+            
+            // 전역 함수로 노출
+            window.renderWaterfallChart = renderWaterfallChart;
+        });
+    </script>
+</body>
+</html>

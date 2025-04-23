@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>부드러운 실시간 Chart.js 라인 차트</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f7f7f7;
+    }
+    
+    .chart-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+    }
+    
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-top: 0;
+    }
+    
+    canvas {
+      width: 100% !important;
+      height: 400px !important;
+    }
+    
+    .controls {
+      margin: 20px 0;
+      text-align: center;
+    }
+    
+    button {
+      padding: 8px 16px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0 5px;
+      transition: background-color 0.3s;
+    }
+    
+    button:hover {
+      background-color: #45a049;
+    }
+    
+    button:disabled {
+      background-color: #cccccc;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <div class="chart-container">
+    <h2>부드러운 실시간 라인 차트 (Chart.js)</h2>
+    <div>
+      <canvas id="myChart"></canvas>
+    </div>
+    <div class="controls">
+      <button id="start">시작</button>
+      <button id="stop" disabled>정지</button>
+    </div>
+  </div>
+
+  <script>
+    // 초기 데이터 설정
+    const totalPoints = 60; // 표시할 데이터 포인트 개수
+    let lastValueA = 50; // 데이터 A 초기값
+    let lastValueB = 70; // 데이터 B 초기값
+    
+    // 현재 시간을 기준으로 라벨 배열 생성
+    const now = new Date();
+    const labels = [];
+    for (let i = 0; i < totalPoints; i++) {
+      const past = new Date(now.getTime() - (totalPoints - i - 1) * 500);
+      labels.push(past.toLocaleTimeString());
+    }
+    
+    // 초기 데이터 생성 함수
+    function generateInitialData() {
+      const dataA = [];
+      const dataB = [];
+      
+      // 첫 번째 값 설정
+      let valueA = lastValueA;
+      let valueB = lastValueB;
+      
+      // 부드러운 곡선을 위한 데이터 세트 생성
+      for (let i = 0; i < totalPoints; i++) {
+        // 이전 값에서 약간만 변화
+        valueA = valueA + (Math.random() * 4 - 2);
+        valueB = valueB + (Math.random() * 4 - 2);
+        
+        // 범위 제한
+        valueA = Math.max(20, Math.min(80, valueA));
+        valueB = Math.max(30, Math.min(90, valueB));
+        
+        dataA.push(valueA);
+        dataB.push(valueB);
+      }
+      
+      lastValueA = dataA[dataA.length - 1];
+      lastValueB = dataB[dataB.length - 1];
+      
+      return {dataA, dataB};
+    }
+    
+    // 초기 데이터 생성
+    const initialData = generateInitialData();
+    
+    // 차트 생성
+    const ctx = document.getElementById('myChart').getContext('2d');
+    const myChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: '데이터 A',
+            data: initialData.dataA,
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 3,
+            tension: 0.4, // 곡선의 부드러움 조절
+            pointRadius: 0, // 포인트 감추기
+            pointHoverRadius: 5, // 호버 시 포인트 표시
+            fill: false
+          },
+          {
+            label: '데이터 B',
+            data: initialData.dataB,
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 3,
+            tension: 0.4, // 곡선의 부드러움 조절
+            pointRadius: 0, // 포인트 감추기
+            pointHoverRadius: 5, // 호버 시 포인트 표시
+            fill: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: {
+          duration: 0 // 전체 애니메이션 비활성화 (우리 자체 트랜지션 사용)
+        },
+        plugins: {
+          legend: {
+            position: 'top',
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+          }
+        },
+        scales: {
+          y: {
+            min: 0,
+            max: 100,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.1)'
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        },
+        interaction: {
+          mode: 'nearest',
+          axis: 'x',
+          intersect: false
+        },
+        transitions: {
+          zoom: {
+            animation: {
+              duration: 1000,
+              easing: 'easeOutCubic'
+            }
+          }
+        }
+      }
+    });
+    
+    // 업데이트 간격 (밀리초)
+    const updateInterval = 50; // 50ms마다 업데이트 (초당 20프레임)
+    
+    let timer; // 타이머 참조 저장
+    
+    // 차트 업데이트 함수
+    function updateChart() {
+      // 새 시간 라벨 생성
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString();
+      
+      // 라벨 업데이트 (왼쪽 이동)
+      myChart.data.labels.shift();
+      myChart.data.labels.push(timeStr);
+      
+      // 새로운 데이터 생성 (부드러운 변화)
+      lastValueA = lastValueA + (Math.random() * 2 - 1); // 더 작은 변화폭
+      lastValueB = lastValueB + (Math.random() * 2 - 1);
+      
+      // 범위 제한
+      lastValueA = Math.max(20, Math.min(80, lastValueA));
+      lastValueB = Math.max(30, Math.min(90, lastValueB));
+      
+      // 데이터셋 업데이트
+      myChart.data.datasets[0].data.shift();
+      myChart.data.datasets[0].data.push(lastValueA);
+      
+      myChart.data.datasets[1].data.shift();
+      myChart.data.datasets[1].data.push(lastValueB);
+      
+      // 차트 업데이트 (부드러운 트랜지션)
+      myChart.update('none'); // 애니메이션 없이 업데이트
+    }
+    
+    // 시작 버튼 이벤트
+    document.getElementById('start').addEventListener('click', function() {
+      if (!timer) {
+        // 업데이트 시작
+        timer = setInterval(updateChart, updateInterval);
+        // 버튼 상태 업데이트
+        this.disabled = true;
+        document.getElementById('stop').disabled = false;
+      }
+    });
+    
+    // 정지 버튼 이벤트
+    document.getElementById('stop').addEventListener('click', function() {
+      if (timer) {
+        // 업데이트 중지
+        clearInterval(timer);
+        timer = null;
+        // 버튼 상태 업데이트
+        this.disabled = true;
+        document.getElementById('start').disabled = false;
+      }
+    });
+    
+    // 자동 시작
+    document.getElementById('start').click();
+  </script>
+</body>
+</html>

@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>쿼리 상세 정보 - DB 모니터링 시스템</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        
+        :root {
+            --primary: #2563eb;
+            --primary-light: #e0e7ff;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text-primary: #334155;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --background: #f8fafc;
+            --card: #ffffff;
+        }
+        
+        body {
+            background-color: var(--background);
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+        
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 12px 24px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .header-title {
+            display: flex;
+            align-items: center;
+        }
+        
+        .header-title h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .header-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-left: 12px;
+        }
+        
+        .status-badge.partial {
+            background-color: #f0f9ff;
+            color: #0284c7;
+        }
+        
+        .status-badge.success {
+            background-color: #f0fdf4;
+            color: #16a34a;
+        }
+        
+        .status-badge.warning {
+            background-color: #fffbeb;
+            color: #d97706;
+        }
+        
+        .status-badge.error {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+        
+        .btn-outline {
+            border: 1px solid var(--border);
+            background-color: white;
+            color: var(--text-primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--background);
+        }
+        
+        .icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 6px;
+        }
+        
+        .card {
+            background-color: var(--card);
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .card-body {
+            padding: 16px;
+        }
+        
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .overview-item {
+            background-color: var(--card);
+            border-radius: 6px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            padding: 16px;
+        }
+        
+        .overview-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .overview-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .overview-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        
+        .meta-positive {
+            color: var(--success);
+        }
+        
+        .meta-negative {
+            color: var(--danger);
+        }
+        
+        .property-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        
+        .property-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .property-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .property-value {
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+        
+        .sql-box {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 4px;
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+        
+        .keyword {
+            color: #60a5fa;
+        }
+        
+        .string {
+            color: #a5b4fc;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        
+        thead {
+            background-color: #f9fafb;
+        }
+        
+        th {
+            text-align: left;
+            padding: 10px 12px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        td {
+            padding: 10px 12px;
+            border-top: 1px solid var(--border);
+        }
+        
+        tr:hover {
+            background-color: #f8fafc;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .metric-card {
+            background-color: var(--card);
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .metric-title {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        
+        .metric-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .metric-trend {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        
+        .history-graph {
+            height: 150px;
+            display: flex;
+            align-items: flex-end;
+            gap: 4px;
+            padding: 16px 0;
+        }
+        
+        .graph-bar {
+            flex: 1;
+            background-color: #93c5fd;
+            border-radius: 3px 3px 0 0;
+            position: relative;
+            transition: all 0.2s;
+        }
+        
+        .graph-bar.warning {
+            background-color: #fcd34d;
+        }
+        
+        .graph-bar.error {
+            background-color: #f87171;
+        }
+        
+        .graph-bar:hover {
+            opacity: 0.9;
+        }
+        
+        .graph-bar-label {
+            position: absolute;
+            bottom: -20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+        
+        .graph-bar-value {
+            position: absolute;
+            top: -20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-primary);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .graph-bar:hover .graph-bar-value {
+            opacity: 1;
+        }
+        
+        .section {
+            margin-bottom: 24px;
+        }
+        
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background-color: #f0fdf4;
+            color: #16a34a;
+        }
+        
+        .badge-warning {
+            background-color: #fffbeb;
+            color: #d97706;
+        }
+        
+        .badge-error {
+            background-color: #fef2f2;
+            color: #dc2626;
+        }
+        
+        .bottleneck-analysis {
+            padding: 16px;
+        }
+        
+        .bottleneck-status {
+            margin-bottom: 16px;
+        }
+        
+        .bottleneck-details h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .bottleneck-details ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .bottleneck-details li {
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .text-small {
+            font-size: 12px;
+        }
+        
+        .text-secondary {
+            color: var(--text-secondary);
+        }
+        
+        .mono {
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+        }
+        
+        .border-t {
+            border-top: 1px solid var(--border);
+        }
+        
+        .mt-4 {
+            margin-top: 16px;
+        }
+        
+        .request-id {
+            font-size: 12px;
+            color: var(--text-secondary);
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+        
+        .tab {
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-title">
+                <div>
+                    <h1>쿼리 상세정보</h1>
+                    <div class="header-subtitle">SELECT orders.*, customers.name FROM orders JOIN customers...</div>
+                </div>
+                <div class="status-badge success">완료됨</div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-outline">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    새로고침
+                </button>
+                <button class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    쿼리 실행
+                </button>
+            </div>
+        </div>
+        
+        <div class="overview-grid">
+            <div class="overview-item">
+                <div class="overview-label">실행 시간</div>
+                <div class="overview-value">1.24s</div>
+                <div class="overview-meta">
+                    <span class="meta-positive">▼ 388ms 빠름</span>
+                </div>
+            </div>
+            <div class="overview-item">
+                <div class="overview-label">복잡도</div>
+                <div class="overview-value">145</div>
+                <div class="overview-meta">포인트</div>
+            </div>
+            <div class="overview-item">
+                <div class="overview-label">캐시 상태</div>
+                <div class="overview-value">PARTIAL</div>
+                <div class="overview-meta">6kb 캐시됨 (55.5%)</div>
+            </div>
+            <div class="overview-item">
+                <div class="overview-label">응답 크기</div>
+                <div class="overview-value">10 kbs</div>
+                <div class="overview-meta">요청: 574 B</div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">쿼리 정보</div>
+                <div class="request-id">ID: q-12345</div>
+            </div>
+            <div class="card-body">
+                <div class="property-grid">
+                    <div class="property-item">
+                        <div class="property-label">데이터베이스</div>
+                        <div class="property-value">production_db</div>
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">테이블</div>
+                        <div class="property-value">orders, customers</div>
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">HTTP 메소드</div>
+                        <div class="property-value">POST</div>
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">영향받은 행</div>
+                        <div class="property-value">42</div>
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">반환된 행</div>
+                        <div class="property-value">42</div>
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">HTTP 상태</div>
+                        <div class="property-value">200</div>
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">생성 시간</div>
+                        <div class="property-value">2025-04-15 09:32:18</div>
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">실행자</div>
+                        <div class="property-value">admin@example.com</div>
+                    </div>
+                    <div class="property-item">
+                        <div class="property-label">위치</div>
+                        <div class="property-value">Cork, Ireland</div>
+                    </div>
+                </div>
+                
+                <div class="sql-box">
+<span class="keyword">SELECT</span> orders.*, customers.name, customers.email 
+<span class="keyword">FROM</span> orders 
+<span class="keyword">JOIN</span> customers <span class="keyword">ON</span> orders.customer_id = customers.id 
+<span class="keyword">WHERE</span> orders.status = <span class="string">"pending"</span> 
+  <span class="keyword">AND</span> orders.created_at > <span class="keyword">NOW()</span> - <span class="keyword">INTERVAL</span> 7 <span class="keyword">DAY</span> 
+<span class="keyword">ORDER BY</span> orders.created_at <span class="keyword">DESC</span> 
+<span class="keyword">LIMIT</span> 50;
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3 class="section-title">실행 계획</h3>
+            <div class="card">
+                <div class="card-body" style="padding: 0;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Operation</th>
+                                <th>Table</th>
+                                <th>Rows</th>
+                                <th>Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>NESTED LOOP JOIN</td>
+                                <td>-</td>
+                                <td>42</td>
+                                <td>4.21</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>TABLE ACCESS FULL</td>
+                                <td>orders</td>
+                                <td>87</td>
+                                <td>2.33</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>TABLE ACCESS BY INDEX ROWID</td>
+                                <td>customers</td>
+                                <td>1</td>
+                                <td>0.02</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3 class="section-title">성능 지표</h3>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="metric-title">CPU 사용량</div>
+                    <div class="metric-value">32%</div>
+                    <div class="metric-trend meta-positive">▼ 4%</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">메모리</div>
+                    <div class="metric-value">128MB</div>
+                    <div class="metric-trend text-secondary">안정적</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">디스크 I/O</div>
+                    <div class="metric-value">840</div>
+                    <div class="metric-trend meta-negative">▲ 120</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">캐시 히트</div>
+                    <div class="metric-value">156</div>
+                    <div class="metric-trend meta-positive">▲ 12</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-title">캐시 미스</div>
+                    <div class="metric-value">12</div>
+                    <div class="metric-trend meta-positive">▼ 3</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h3 class="section-title">실행 이력</h3>
+            <div class="card">
+                <div class="card-body">
+                    <div class="history-graph">
+                        <div class="graph-bar" style="height: 70%;">
+                            <div class="graph-bar-value">1.24s</div>
+                            <div class="graph-bar-label">04-15</div>
+                        </div>
+                        <div class="graph-bar" style="height: 67%;">
+                            <div class="graph-bar-value">1.18s</div>
+                            <div class="graph-bar-label">04-14</div>
+                        </div>
+                        <div class="graph-bar warning" style="height: 100%;">
+                            <div class="graph-bar-value">3.52s</div>
+                            <div class="graph-bar-label">04-13</div>
+                        </div>
+                        <div class="graph-bar" style="height: 68%;">
+                            <div class="graph-bar-value">1.21s</div>
+                            <div class="graph-bar-label">04-12</div>
+                        </div>
+                        <div class="graph-bar" style="height: 67%;">
+                            <div class="graph-bar-value">1.19s</div>
+                            <div class="graph-bar-label">04-11</div>
+                        </div>
+                    </div>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>타임스탬프</th>
+                                <th>실행 시간</th>
+                                <th>상태</th>
+                                <th>실행자</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2025-04-15 09:32:18</td>
+                                <td>1.24s</td>
+                                <td><div class="badge badge-success">완료됨</div></td>
+                                <td>admin@example.com</td>
+                            </tr>
+                            <tr>
+                                <td>2025-04-14 14:21:03</td>
+                                <td>1.18s</td>
+                                <td><div class="badge badge-success">완료됨</div></td>
+                                <td>admin@example.com</td>
+                            </tr>
+                            <tr>
+                                <td>2025-04-13 11:15:46</td>
+                                <td>3.52s</td>
+                                <td><div class="badge badge-warning">경고</div></td>
+                                <td>system@example.com</td>
+                            </tr>
+                            <tr>
+                                <td>2025-04-12 16:43:22</td>
+                                <td>1.21s</td>
+                                <td><div class="badge badge-success">완료됨</div></td>
+                                <td>admin@example.com</td>
+                            </tr>
+                            <tr>
+                                <td>2025-04-11 08:32:54</td>
+                                <td>1.19s</td>
+                                <td><div class="badge badge-success">완료됨</div></td>
+                                <td>admin@example.com</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="flex-between">
+                <h3 class="section-title">병목 현상 분석</h3>
+                <div class="badge badge-warning">잠재적 병목 감지됨</div>
+            </div>
+            <div class="card">
+                <div class="card-body" style="padding: 0;">
+                    <!-- 병목 현상 심각도 표시 -->
+                    <div style="background: linear-gradient(to right, #fef2f2, #fffbeb, #f0fdf4); height: 4px; width: 100%;">
+                        <div style="background-color: #f59e0b; height: 100%; width: 52%;"></div>
+                    </div>
+                    
+                    <div style="padding: 16px;">
+                        <div style="display: flex; margin-bottom: 16px; align-items: center;">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background-color: #fffbeb; display: flex; justify-content: center; align-items: center; margin-right: 16px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                </svg>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">성능 저하 감지</div>
+                                <div style="color: var(--text-secondary);">평균 실행 시간 대비 193% 증가 발생</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 성능 점수 카드 -->
+                        <div style="display: flex; gap: 16px; margin-bottom: 24px;">
+                            <div style="flex: 1; background-color: #f8fafc; border-radius: 6px; padding: 12px;">
+                                <div style="font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px;">성능 점수</div>
+                                <div style="font-size: 20px; font-weight: 600; color: #f59e0b;">52/100</div>
+                            </div>
+                            <div style="flex: 1; background-color: #f8fafc; border-radius: 6px; padding: 12px;">
+                                <div style="font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px;">최적화 가능성</div>
+                                <div style="font-size: 20px; font-weight: 600; color: #10b981;">높음</div>
+                            </div>
+                            <div style="flex: 1; background-color: #f8fafc; border-radius: 6px; padding: 12px;">
+                                <div style="font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px;">예상 개선율</div>
+                                <div style="font-size: 20px; font-weight: 600; color: #10b981;">78%</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 주요 병목 원인 -->
+                        <div style="margin-bottom: 24px;">
+                            <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                                주요 병목 원인
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div style="display: flex; background-color: #fef2f2; border-left: 3px solid #ef4444; padding: 12px; border-radius: 4px;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 500; margin-bottom: 4px;">테이블 전체 스캔</div>
+                                        <div style="font-size: 13px; color: var(--text-secondary);">orders 테이블에 대한 TABLE ACCESS FULL 작업 발생</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-weight: 600; color: #ef4444;">심각</div>
+                                        <div style="font-size: 12px; color: var(--text-secondary);">비용: 2.33</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; background-color: #fffbeb; border-left: 3px solid #f59e0b; padding: 12px; border-radius: 4px;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 500; margin-bottom: 4px;">캐시 미스 비율 높음</div>
+                                        <div style="font-size: 13px; color: var(--text-secondary);">캐시 히트율 92.9%로 목표 98% 미달</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-weight: 600; color: #f59e0b;">주의</div>
+                                        <div style="font-size: 12px; color: var(--text-secondary);">12회 발생</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; background-color: #f0fdf4; border-left: 3px solid #10b981; padding: 12px; border-radius: 4px;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 500; margin-bottom: 4px;">조인 연산 효율성</div>
+                                        <div style="font-size: 13px; color: var(--text-secondary);">NESTED LOOP JOIN 작업이 효율적으로 수행됨</div>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <div style="font-weight: 600; color: #10b981;">양호</div>
+                                        <div style="font-size: 12px; color: var(--text-secondary);">비용: 4.21</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 최적화 권장사항 -->
+                        <div style="margin-bottom: 24px;">
+                            <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                                </svg>
+                                최적화 권장사항
+                            </div>
+                            
+                            <div style="border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-bottom: 16px;">
+                                <table style="width: 100%;">
+                                    <thead>
+                                        <tr style="background-color: #f8fafc;">
+                                            <th style="padding: 10px 12px; text-align: left;">권장사항</th>
+                                            <th style="padding: 10px 12px; text-align: left;">예상 개선효과</th>
+                                            <th style="padding: 10px 12px; text-align: left;">우선순위</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="padding: 12px;">
+                                                <div style="font-weight: 500;">복합 인덱스 생성</div>
+                                                <div style="font-size: 12px; color: var(--text-secondary);">orders 테이블의 (status, created_at) 컬럼에 인덱스 추가</div>
+                                            </td>
+                                            <td style="padding: 12px;">
+                                                <div style="font-weight: 500; color: #10b981;">+65%</div>
+                                            </td>
+                                            <td style="padding: 12px;">
+                                                <div class="badge badge-error">높음</div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 12px;">
+                                                <div style="font-weight: 500;">쿼리 힌트 추가</div>
+                                                <div style="font-size: 12px; color: var(--text-secondary);">옵티마이저 힌트를 사용하여 인덱스 사용 유도</div>
+                                            </td>
+                                            <td style="padding: 12px;">
+                                                <div style="font-weight: 500; color: #10b981;">+25%</div>
+                                            </td>
+                                            <td style="padding: 12px;">
+                                                <div class="badge badge-warning">중간</div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 12px;">
+                                                <div style="font-weight: 500;">캐싱 전략 개선</div>
+                                                <div style="font-size: 12px; color: var(--text-secondary);">자주 액세스되는 데이터에 대한 메모리 캐시 확장</div>
+                                            </td>
+                                            <td style="padding: 12px;">
+                                                <div style="font-weight: 500; color: #10b981;">+10%</div>
+                                            </td>
+                                            <td style="padding: 12px;">
+                                                <div class="badge badge-success">낮음</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- 최적화된 쿼리 제안 -->
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                                    <polyline points="16 18 22 12 16 6"></polyline>
+                                    <polyline points="8 6 2 12 8 18"></polyline>
+                                </svg>
+                                최적화된 쿼리 제안
+                            </div>
+                            
+                            <div style="background-color: #f8fafc; border-radius: 6px; padding: 16px; margin-bottom: 16px;">
+                                <div style="margin-bottom: 12px; font-size: 13px;">1. 인덱스 생성</div>
+                                <div class="sql-box" style="margin-bottom: 16px;">
+<span class="keyword">CREATE INDEX</span> idx_orders_status_created_at <span class="keyword">ON</span> orders(status, created_at);
+                                </div>
+                                
+                                <div style="margin-bottom: 12px; font-size: 13px;">2. 최적화된 쿼리</div>
+                                <div class="sql-box">
+<span class="keyword">SELECT</span> o.*, c.name, c.email 
+<span class="keyword">FROM</span> orders o <span class="keyword">USE INDEX</span> (idx_orders_status_created_at)
+<span class="keyword">JOIN</span> customers c <span class="keyword">ON</span> o.customer_id = c.id 
+<span class="keyword">WHERE</span> o.status = <span class="string">"pending"</span> 
+  <span class="keyword">AND</span> o.created_at > <span class="keyword">NOW()</span> - <span class="keyword">INTERVAL</span> 7 <span class="keyword">DAY</span> 
+<span class="keyword">ORDER BY</span> o.created_at <span class="keyword">DESC</span> 
+<span class="keyword">LIMIT</span> 50;
+                                </div>
+                            </div>
+                            
+                            <div style="background-color: #f0fdf4; border-radius: 6px; padding: 12px;">
+                                <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    <div style="font-weight: 500; color: #10b981;">예상 성능 개선</div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; font-size: 13px;">
+                                    <div>현재 실행 시간: <strong>1.24초</strong></div>
+                                    <div>예상 실행 시간: <strong>0.27초</strong> (↓78%)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 향후 필요한 JavaScript 기능
+    </script>
+</body>
+</html>
