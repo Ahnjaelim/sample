@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FullCalendar 예제</title>
+  
+  <!-- FullCalendar 최신 버전 CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/fullcalendar.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/3.10.2/locale/ko.js"></script>
+  
+  <style>
+    body {
+      margin: 40px 10px;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    
+    #calendar {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="calendar"></div>
+
+  <script>
+    $(document).ready(function() {
+      $('#calendar').fullCalendar({
+        // 한국어 설정
+        locale: 'ko',
+        
+        // 헤더 설정
+        header: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'month,agendaWeek,agendaDay,listMonth'
+        },
+        
+        // 기본 날짜 설정
+        defaultDate: moment(),
+        
+        // 이벤트 클릭 가능 여부
+        navLinks: true,
+        
+        // 주말 표시 여부
+        weekends: true,
+        
+        // 이벤트 드래그 가능
+        editable: true,
+        
+        // 하루 종일 이벤트 표시 개수 제한
+        eventLimit: true,
+        
+        // 날짜 클릭 시 이벤트
+        dayClick: function(date) {
+          alert('날짜 클릭: ' + date.format());
+        },
+        
+        // 이벤트 클릭 시
+        eventClick: function(event) {
+          alert('이벤트: ' + event.title);
+        },
+        
+        // 샘플 이벤트
+        events: [
+          {
+            title: '하루 종일 이벤트',
+            start: '2025-03-27',
+            color: '#3788d8'
+          },
+          {
+            title: '미팅',
+            start: '2025-03-27T10:30:00',
+            end: '2025-03-27T12:30:00',
+            color: '#f56954'
+          },
+          {
+            title: '점심 약속',
+            start: '2025-03-28T12:00:00',
+            color: '#00a65a'
+          },
+          {
+            title: '생일 파티',
+            start: '2025-03-29T19:00:00',
+            color: '#f39c12'
+          },
+          {
+            title: '회사 워크샵',
+            start: '2025-03-30',
+            end: '2025-04-01',
+            color: '#605ca8'
+          },
+          {
+            title: '프로젝트 회의',
+            start: '2025-03-27T14:00:00',
+            end: '2025-03-27T16:30:00',
+            color: '#00c0ef'
+          },
+          {
+            title: '주간 계획 수립',
+            start: '2025-03-31T09:00:00',
+            end: '2025-03-31T11:00:00',
+            color: '#f39c12'
+          },
+          {
+            title: '제품 출시 이벤트',
+            start: '2025-04-02',
+            end: '2025-04-04',
+            color: '#0073b7',
+            allDay: true
+          }
+        ]
+      });
+    });
+  </script>
+</body>
+</html>

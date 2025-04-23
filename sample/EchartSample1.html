@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>시간 기반 스캐터 차트</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        #chart {
+            width: 100%;
+            height: 600px;
+            margin-bottom: 20px;
+        }
+        .file-input {
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="chart"></div>
+    <input type="file" id="fileInput" class="file-input" accept=".json">
+    
+    <script>
+        // 차트 초기화
+        const chartDom = document.getElementById('chart');
+        const myChart = echarts.init(chartDom);
+        const fileInput = document.getElementById('fileInput');
+        
+        // 시간 포맷팅 함수
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString();
+        }
+        
+        // 차트 렌더링 함수
+        function renderChart(data) {
+            // 차트 데이터 가공
+            const scatterData = data.map(item => {
+                return {
+                    value: [item.x, item.y],
+                    // 추가 데이터를 툴팁에 사용하기 위해 저장
+                    itemData: {
+                        resourceName: item.resource_name || '리소스 ' + item.resource_no,
+                        ext: item.ext || '',
+                        originalSize: item.resource_org_size || 0,
+                        optimizedSize: item.resource_new_size_type2 || 0
+                    }
+                };
+            });
+            
+            // 차트 옵션
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        const data = params.data.itemData;
+                        const time = formatTime(params.value[0]);
+                        return `<strong>${data.resourceName}</strong><br>
+                                시간: ${time}<br>
+                                Y값: ${params.value[1]}<br>
+                                ${data.ext ? '확장자: ' + data.ext + '<br>' : ''}
+                                ${data.originalSize ? '원본 크기: ' + formatBytes(data.originalSize) + '<br>' : ''}
+                                ${data.optimizedSize ? '최적화 크기: ' + formatBytes(data.optimizedSize) : ''}`;
+                    }
+                },
+                xAxis: {
+                    type: 'time',
+                    name: '시간',
+                    axisLabel: {
+                        formatter: function(value) {
+                            return formatTime(value);
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'Y'
+                },
+                series: [{
+                    type: 'scatter',
+                    data: scatterData,
+                    symbolSize: 10
+                }],
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        xAxisIndex: 0
+                    },
+                    {
+                        type: 'slider',
+                        xAxisIndex: 0
+                    }
+                ]
+            };
+            
+            // 차트 렌더링
+            myChart.setOption(option);
+        }
+        
+        // 바이트 포맷팅 함수
+        function formatBytes(bytes, decimals = 2) {
+            if (!bytes || bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+        
+        // jsonData.json 파일 로드
+        fetch('jsonData.json')
+            .then(response => response.json())
+            .then(json => {
+                if (json && json.data) {
+                    renderChart(json.data);
+                }
+            })
+            .catch(error => {
+                console.error('데이터 로드 오류:', error);
+            });
+        
+        // 파일 입력 처리
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        if (json && json.data) {
+                            renderChart(json.data);
+                        }
+                    } catch (error) {
+                        console.error('JSON 파싱 오류:', error);
+                    }
+                };
+                
+                reader.readAsText(file);
+            }
+        });
+        
+        // 화면 크기 변경 시 차트 크기 조정
+        window.addEventListener('resize', () => myChart.resize());
+    </script>
+</body>
+</html>

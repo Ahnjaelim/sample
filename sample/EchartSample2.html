@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>스캐터 차트와 데이터 테이블</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.3/echarts.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        
+        h1, h2 {
+            color: #333;
+        }
+        
+        #chart {
+            width: 100%;
+            height: 500px;
+            margin-bottom: 30px;
+        }
+        
+        .file-input {
+            margin-bottom: 20px;
+        }
+        
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 30px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f2f2f2;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .search-box {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        button {
+            padding: 8px 12px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #3b78e7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>리소스 데이터 시각화</h1>
+        
+        <div class="controls">
+            <input type="file" id="fileInput" class="file-input" accept=".json">
+            <button id="toggleTableBtn">테이블 표시/숨기기</button>
+        </div>
+        
+        <div id="chart"></div>
+        
+        <div id="tableSection">
+            <h2>데이터 테이블</h2>
+            <input type="text" id="searchBox" class="search-box" placeholder="검색어를 입력하세요...">
+            <div class="table-container">
+                <table id="dataTable">
+                    <thead>
+                        <tr id="tableHeader">
+                            <!-- 헤더는 자동으로 생성됩니다 -->
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- 데이터는 자동으로 생성됩니다 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // DOM 요소
+        const chartDom = document.getElementById('chart');
+        const fileInput = document.getElementById('fileInput');
+        const tableHeader = document.getElementById('tableHeader');
+        const tableBody = document.getElementById('tableBody');
+        const searchBox = document.getElementById('searchBox');
+        const toggleTableBtn = document.getElementById('toggleTableBtn');
+        const tableSection = document.getElementById('tableSection');
+        
+        // 차트 초기화
+        const myChart = echarts.init(chartDom);
+        
+        // 현재 데이터 저장
+        let currentData = [];
+        
+        // 시간 포맷팅 함수
+        function formatTime(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(Number(timestamp));
+            if (isNaN(date)) return timestamp;
+            return date.toLocaleTimeString();
+        }
+        
+        // 바이트 포맷팅 함수
+        function formatBytes(bytes, decimals = 2) {
+            if (!bytes || bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const dm = decimals < 0 ? 0 : decimals;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+        }
+        
+        // 차트 렌더링 함수
+        function renderChart(data) {
+            // 차트 데이터 가공
+            const scatterData = data.map(item => {
+                return {
+                    value: [item.x, item.y],
+                    // 추가 데이터를 툴팁에 사용하기 위해 저장
+                    itemData: {
+                        resourceName: item.resource_name || '리소스 ' + item.resource_no,
+                        ext: item.ext || '',
+                        originalSize: item.resource_org_size || 0,
+                        optimizedSize: item.resource_new_size_type2 || 0
+                    }
+                };
+            });
+            
+            // 차트 옵션
+            const option = {
+                tooltip: {
+                    trigger: 'item',
+                    formatter: function(params) {
+                        const data = params.data.itemData;
+                        const time = formatTime(params.value[0]);
+                        return `<strong>${data.resourceName}</strong><br>
+                                시간: ${time}<br>
+                                Y값: ${params.value[1]}<br>
+                                ${data.ext ? '확장자: ' + data.ext + '<br>' : ''}
+                                ${data.originalSize ? '원본 크기: ' + formatBytes(data.originalSize) + '<br>' : ''}
+                                ${data.optimizedSize ? '최적화 크기: ' + formatBytes(data.optimizedSize) : ''}`;
+                    }
+                },
+                xAxis: {
+                    type: 'time',
+                    name: '시간',
+                    axisLabel: {
+                        formatter: function(value) {
+                            return formatTime(value);
+                        }
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    name: 'Y'
+                },
+                series: [{
+                    type: 'scatter',
+                    data: scatterData,
+                    symbolSize: 10
+                }],
+                dataZoom: [
+                    {
+                        type: 'inside',
+                        xAxisIndex: 0
+                    },
+                    {
+                        type: 'slider',
+                        xAxisIndex: 0
+                    }
+                ]
+            };
+            
+            // 차트 렌더링
+            myChart.setOption(option);
+        }
+        
+        // 테이블 렌더링 함수
+        function renderTable(data, filter = '') {
+            if (!data || data.length === 0) {
+                tableHeader.innerHTML = '<th>데이터 없음</th>';
+                tableBody.innerHTML = '<tr><td>표시할 데이터가 없습니다.</td></tr>';
+                return;
+            }
+            
+            // 첫 번째 데이터 항목에서 헤더 생성
+            const headers = Object.keys(data[0]);
+            tableHeader.innerHTML = headers.map(header => 
+                `<th>${header}</th>`
+            ).join('');
+            
+            // 필터링된 데이터로 테이블 본문 생성
+            const filteredData = filter 
+                ? data.filter(item => 
+                    Object.values(item).some(value => 
+                        String(value).toLowerCase().includes(filter.toLowerCase())
+                    )
+                ) 
+                : data;
+            
+            // 테이블 본문 생성
+            tableBody.innerHTML = filteredData.map(item => {
+                return `<tr>
+                    ${headers.map(header => {
+                        const value = item[header];
+                        
+                        // 값의 타입에 따라 포맷팅
+                        if (header === 'x' || header.includes('time')) {
+                            return `<td>${formatTime(value)}</td>`;
+                        } else if (header.includes('size')) {
+                            return `<td>${formatBytes(value)}</td>`;
+                        } else {
+                            return `<td>${value || ''}</td>`;
+                        }
+                    }).join('')}
+                </tr>`;
+            }).join('');
+        }
+        
+        // 데이터 처리 함수
+        function processData(json) {
+            if (json && json.data && Array.isArray(json.data)) {
+                currentData = json.data;
+                renderChart(currentData);
+                renderTable(currentData);
+            } else {
+                alert('유효한 데이터 형식이 아닙니다.');
+            }
+        }
+        
+        // jsonData.json 파일 로드
+        fetch('jsonData.json')
+            .then(response => response.json())
+            .then(json => {
+                processData(json);
+            })
+            .catch(error => {
+                console.error('데이터 로드 오류:', error);
+            });
+        
+        // 파일 입력 처리
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const json = JSON.parse(e.target.result);
+                        processData(json);
+                    } catch (error) {
+                        console.error('JSON 파싱 오류:', error);
+                        alert('JSON 파싱 오류: ' + error.message);
+                    }
+                };
+                
+                reader.readAsText(file);
+            }
+        });
+        
+        // 검색 기능
+        searchBox.addEventListener('input', function() {
+            renderTable(currentData, this.value);
+        });
+        
+        // 테이블 표시/숨기기 토글
+        toggleTableBtn.addEventListener('click', function() {
+            if (tableSection.style.display === 'none') {
+                tableSection.style.display = 'block';
+                this.textContent = '테이블 숨기기';
+            } else {
+                tableSection.style.display = 'none';
+                this.textContent = '테이블 표시하기';
+            }
+        });
+        
+        // 화면 크기 변경 시 차트 크기 조정
+        window.addEventListener('resize', () => myChart.resize());
+    </script>
+</body>
+</html>
